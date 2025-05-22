@@ -41,7 +41,7 @@ export default function SignInForm() {
 
     try {
       const result = await signIn.create({
-        identifier: data.identifier, // Clerk expects 'identifier' for email/username
+        identifier: data.identifier,
         password: data.password,
       });
 
