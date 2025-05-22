@@ -1,6 +1,4 @@
-import SignUpForm from "@/components/SignUpForm";
-import { CloudUpload } from "lucide-react";
-import Link from "next/link";
+import SignUpForm from "@/components/signUpForm";
 import Navbar from "@/components/Navbar";
 
 export default function SignUpPage() {

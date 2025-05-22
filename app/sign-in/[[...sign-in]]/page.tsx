@@ -1,6 +1,4 @@
-import SignInForm from "@/components/SignInForm";
-import { CloudUpload } from "lucide-react";
-import Link from "next/link";
+import SignInForm from "@/components/signInForm";
 import Navbar from "@/components/Navbar";
 
 export default function SignInPage() {

@@ -61,12 +61,21 @@ export default function SignUpForm() {
 
       await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
       setVerifying(true);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "errors" in error &&
+        Array.isArray((error as { errors?: unknown[] }).errors)
+      ) {
+        setAuthError(
+          ((error as { errors?: { message?: string }[] }).errors?.[0]?.message) ||
+            "An error occurred during sign-up. Please try again."
+        );
+      } else {
+        setAuthError("An error occurred during sign-up. Please try again.");
+      }
       console.error("Sign-up error:", error);
-      setAuthError(
-        error.errors?.[0]?.message ||
-          "An error occurred during sign-up. Please try again."
-      );
     } finally {
       setIsSubmitting(false);
     }
@@ -95,12 +104,21 @@ export default function SignUpForm() {
           "Verification could not be completed. Please try again."
         );
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "errors" in error &&
+        Array.isArray((error as { errors?: unknown[] }).errors)
+      ) {
+        setVerificationError(
+          ((error as { errors?: { message?: string }[] }).errors?.[0]?.message) ||
+            "An error occurred during verification. Please try again."
+        );
+      } else {
+        setVerificationError("An error occurred during verification. Please try again.");
+      }
       console.error("Verification error:", error);
-      setVerificationError(
-        error.errors?.[0]?.message ||
-          "An error occurred during verification. Please try again."
-      );
     } finally {
       setIsSubmitting(false);
     }
@@ -114,7 +132,7 @@ export default function SignUpForm() {
             Verify Your Email
           </h1>
           <p className="text-default-500 text-center">
-            We've sent a verification code to your email
+            We&apos;ve sent a verification code to your email
           </p>
         </CardHeader>
 
@@ -159,7 +177,7 @@ export default function SignUpForm() {
 
           <div className="mt-6 text-center">
             <p className="text-sm text-default-500">
-              Didn't receive a code?{" "}
+              Didn&apos;t receive a code?{" "}
               <button
                 onClick={async () => {
                   if (signUp) {
