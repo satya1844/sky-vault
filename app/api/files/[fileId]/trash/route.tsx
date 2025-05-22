@@ -32,23 +32,14 @@ export async function PATCH(
       return NextResponse.json({ error: "File not found" }, { status: 404 });
     }
 
-    // Toggle the isTrash status (move to trash or restore)
+    // Toggle the isTrashed status (move to trash or restore)
     const [updatedFile] = await db
       .update(files)
-      .set({ isTrash: !file.isTrash })
+      .set({ isTrashed: !file.isTrashed })
       .where(and(eq(files.id, fileId), eq(files.userId, userId)))
       .returning();
 
-    const action = updatedFile.isTrash ? "moved to trash" : "restored";
+    const action = updatedFile.isTrashed ? "moved to trash" : "restored";
     return NextResponse.json({
       ...updatedFile,
-      message: `File ${action} successfully`,
-    });
-  } catch (error) {
-    console.error("Error updating trash status:", error);
-    return NextResponse.json(
-      { error: "Failed to update file trash status" },
-      { status: 500 }
-    );
-  }
-}
+      message: `

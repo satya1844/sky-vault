@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
       parentId: null, // Root level by default
       isFolder: false,
       isStarred: false,
-      isTrash: false,
+      isTrashed: false,
     };
 
     // Insert file record into database

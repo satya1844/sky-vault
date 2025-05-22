@@ -22,7 +22,7 @@ export default function FileActions({
   return (
     <div className="flex flex-wrap gap-2 justify-end">
       {/* Download button */}
-      {!file.isTrash && !file.isFolder && (
+      {!file.isTrashed && !file.isFolder && (
         <Button
           variant="flat"
           size="sm"
@@ -35,7 +35,7 @@ export default function FileActions({
       )}
 
       {/* Star button */}
-      {!file.isTrash && (
+      {!file.isTrashed && (
         <Button
           variant="flat"
           size="sm"
@@ -63,9 +63,9 @@ export default function FileActions({
         size="sm"
         onClick={() => onTrash(file.id)}
         className="min-w-0 px-2"
-        color={file.isTrash ? "success" : "default"}
+        color={file.isTrashed ? "success" : "default"}
         startContent={
-          file.isTrash ? (
+          file.isTrashed ? (
             <ArrowUpFromLine className="h-4 w-4" />
           ) : (
             <Trash className="h-4 w-4" />
@@ -73,12 +73,12 @@ export default function FileActions({
         }
       >
         <span className="hidden sm:inline">
-          {file.isTrash ? "Restore" : "Delete"}
+          {file.isTrashed ? "Restore" : "Delete"}
         </span>
       </Button>
 
       {/* Delete permanently button */}
-      {file.isTrash && (
+      {file.isTrashed && (
         <Button
           variant="flat"
           size="sm"

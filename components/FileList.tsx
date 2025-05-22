@@ -82,23 +82,23 @@ export default function FileList({
   const filteredFiles = useMemo(() => {
     switch (activeTab) {
       case "starred":
-        return files.filter((file) => file.isStarred && !file.isTrash);
+        return files.filter((file) => file.isStarred && !file.isTrashed);
       case "trash":
-        return files.filter((file) => file.isTrash);
+        return files.filter((file) => file.isTrashed);
       case "all":
       default:
-        return files.filter((file) => !file.isTrash);
+        return files.filter((file) => !file.isTrashed);
     }
   }, [files, activeTab]);
 
   // Count files in trash
   const trashCount = useMemo(() => {
-    return files.filter((file) => file.isTrash).length;
+    return files.filter((file) => file.isTrashed).length;
   }, [files]);
 
   // Count starred files
   const starredCount = useMemo(() => {
-    return files.filter((file) => file.isStarred && !file.isTrash).length;
+    return files.filter((file) => file.isStarred && !file.isTrashed).length;
   }, [files]);
 
   const handleStarFile = async (fileId: string) => {
@@ -139,16 +139,16 @@ export default function FileList({
       // Update local state
       setFiles(
         files.map((file) =>
-          file.id === fileId ? { ...file, isTrash: !file.isTrash } : file
+          file.id === fileId ? { ...file, isTrashed: !file.isTrashed } : file
         )
       );
 
       // Show toast
       const file = files.find((f) => f.id === fileId);
       addToast({
-        title: responseData.isTrash ? "Moved to Trash" : "Restored from Trash",
+        title: responseData.isTrashed ? "Moved to Trash" : "Restored from Trash",
         description: `"${file?.name}" has been ${
-          responseData.isTrash ? "moved to trash" : "restored"
+          responseData.isTrashed ? "moved to trash" : "restored"
         }`,
         color: "success",
       });
@@ -202,7 +202,7 @@ export default function FileList({
       await axios.delete(`/api/files/empty-trash`);
 
       // Remove all trashed files from local state
-      setFiles(files.filter((file) => !file.isTrash));
+      setFiles(files.filter((file) => !file.isTrashed));
 
       // Show toast
       addToast({

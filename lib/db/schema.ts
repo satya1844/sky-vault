@@ -44,7 +44,7 @@ export const files = pgTable("files", {
   // File/folder flags
   isFolder: boolean("is_folder").default(false).notNull(), // Whether this is a folder
   isStarred: boolean("is_starred").default(false).notNull(), // Starred/favorite items
-  isTrash: boolean("is_trash").default(false).notNull(), // Items in trash
+  isTrashed: boolean("is_trashed").default(false).notNull(), // Items in trash
 
   // Timestamps
   createdAt: timestamp("created_at").defaultNow().notNull(),
