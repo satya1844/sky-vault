@@ -1,8 +1,6 @@
 "use client";
 
 import { File, Star, Trash } from "lucide-react";
-import { Tabs, Tab } from "@heroui/tabs";
-import Badge from "@/components/ui/Badge";
 import type { File as FileType } from "@/lib/db/schema";
 
 interface FileTabsProps {
@@ -21,69 +19,52 @@ export default function FileTabs({
   trashCount,
 }: FileTabsProps) {
   return (
-    <Tabs
-      selectedKey={activeTab}
-      onSelectionChange={(key) => onTabChange(key as string)}
-      color="primary"
-      variant="underlined"
-      classNames={{
-        base: "w-full overflow-x-auto",
-        tabList: "gap-2 sm:gap-4 md:gap-6 flex-nowrap min-w-full",
-        tab: "py-3 whitespace-nowrap",
-        cursor: "bg-primary",
-      }}
-    >
-      <Tab
-        key="all"
-        title={
-          <div className="flex items-center gap-2 sm:gap-3">
-            <File className="h-4 w-4 sm:h-5 sm:w-5" />
-            <span className="font-medium">All Files</span>
-            <Badge
-              variant="flat"
-              color="default"
-              size="sm"
-              aria-label={`${files.filter((file) => !file.isTrashed).length} files`}
-            >
-              {files.filter((file) => !file.isTrashed).length}
-            </Badge>
-          </div>
-        }
-      />
-      <Tab
-        key="starred"
-        title={
-          <div className="flex items-center gap-2 sm:gap-3">
-            <Star className="h-4 w-4 sm:h-5 sm:w-5" />
-            <span className="font-medium">Starred</span>
-            <Badge
-              variant="flat"
-              color="warning"
-              size="sm"
-              aria-label={`${starredCount} starred files`}
-            >
-              {starredCount}
-            </Badge>
-          </div>
-        }
-      />
-      <Tab
-        key="trash"
-        title={
-          <div className="flex items-center gap-2 sm:gap-3">
-            <Trash className="h-4 w-4 sm:h-5 sm:w-5" />
-            <span className="font-medium">Trash</span>
-            <Badge
-              variant="solid"
-              color="danger"
-              size="sm"
-              aria-label={`${trashCount} files in trash`}
-            >
-              {trashCount}
-            </Badge>
-          </div>
-        }
-      />
-    </Tabs>
+    <div className="flex items-center gap-4 border-b border-[#2d2f36] mb-4">
+      {/* All Files Tab */}
+      <button
+        className={`flex items-center gap-2 px-2 pb-2 font-semibold border-b-2 transition-all duration-150 ${
+          activeTab === "all"
+            ? "text-primary border-primary"
+            : "text-gray-400 border-transparent hover:text-primary/80"
+        }`}
+        onClick={() => onTabChange("all")}
+      >
+        <File className="h-5 w-5" />
+        <span>All Files</span>
+        <span className="ml-1 bg-[#23272f] text-xs rounded px-2 py-0.5 font-bold text-primary border border-primary/30">
+          {files.filter((file) => !file.isTrashed).length}
+        </span>
+      </button>
+      {/* Starred Tab */}
+      <button
+        className={`flex items-center gap-2 px-2 pb-2 font-semibold border-b-2 transition-all duration-150 ${
+          activeTab === "starred"
+            ? "text-yellow-500 border-yellow-500"
+            : "text-gray-400 border-transparent hover:text-yellow-500/80"
+        }`}
+        onClick={() => onTabChange("starred")}
+      >
+        <Star className="h-5 w-5" />
+        <span>Starred</span>
+        <span className="ml-1 bg-[#23272f] text-xs rounded px-2 py-0.5 font-bold text-yellow-500 border border-yellow-500/30">
+          {starredCount}
+        </span>
+      </button>
+      {/* Trash Tab */}
+      <button
+        className={`flex items-center gap-2 px-2 pb-2 font-semibold border-b-2 transition-all duration-150 ${
+          activeTab === "trash"
+            ? "text-pink-500 border-pink-500"
+            : "text-gray-400 border-transparent hover:text-pink-500/80"
+        }`}
+        onClick={() => onTabChange("trash")}
+      >
+        <Trash className="h-5 w-5" />
+        <span>Trash</span>
+        <span className="ml-1 bg-[#23272f] text-xs rounded px-2 py-0.5 font-bold text-pink-500 border border-pink-500/30">
+          {trashCount}
+        </span>
+      </button>
+    </div>
   );
 }

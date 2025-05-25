@@ -1,8 +1,6 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { Card, CardBody, CardHeader } from "@heroui/card";
-import { Tabs, Tab } from "@heroui/tabs";
 import { FileUp, FileText, User } from "lucide-react";
 import FileUploadForm from "@/components/FileUploadForm";
 import FileList from "@/components/FileList";
@@ -45,90 +43,67 @@ export default function DashboardContent({
   return (
     <>
       <div className="mb-8">
-        <h2 className="text-4xl font-bold text-default-900">
-          Hi,{" "}
-          <span className="text-primary">
-            {userName?.length > 10
-              ? `${userName?.substring(0, 10)}...`
-              : userName?.split(" ")[0] || "there"}
-          </span>
-          !
+        <h2 className="text-4xl font-bold text-foreground">
+          Hello, <span className="text-primary">{userName?.length > 10 ? `${userName?.substring(0, 10)}...` : userName?.split(" ")[0] || "there"}</span>!
         </h2>
-        <p className="text-default-600 mt-2 text-lg">
-          Your images are waiting for you.
-        </p>
+        <p className=" text-lg text-yellow-500 mt-2">Your images are waiting for you.</p>
       </div>
 
-      <Tabs
-        aria-label="Dashboard Tabs"
-        color="primary"
-        variant="underlined"
-        selectedKey={activeTab}
-        onSelectionChange={(key) => setActiveTab(key as string)}
-        classNames={{
-          tabList: "gap-6",
-          tab: "py-3",
-          cursor: "bg-primary",
-        }}
-      >
-        <Tab
-          key="files"
-          title={
-            <div className="flex items-center gap-3">
-              <FileText className="h-5 w-5" />
-              <span className="font-medium">My Files</span>
-            </div>
-          }
-        >
-          <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-1">
-              <Card className="border border-default-200 bg-default-50 shadow-sm hover:shadow-md transition-shadow">
-                <CardHeader className="flex gap-3">
+      <div className="w-full">
+        <div className="flex gap-4 mb-6">
+          <button
+            className={`px-4 py-2 font-semibold rounded-t-lg focus:outline-none transition border-b-2 ${activeTab === "files" ? "text-primary border-primary" : "text-gray-400 border-transparent"}`}
+            onClick={() => setActiveTab("files")}
+          >
+            <span className="flex items-center gap-2"><FileText className="h-5 w-5" /> My Files</span>
+          </button>
+          <button
+            className={`px-4 py-2 font-semibold rounded-t-lg focus:outline-none transition border-b-2 ${activeTab === "profile" ? "text-primary border-primary" : "text-gray-400 border-transparent"}`}
+            onClick={() => setActiveTab("profile")}
+          >
+            <span className="flex items-center gap-2"><User className="h-5 w-5" /> Profile</span>
+          </button>
+        </div>
+
+        {activeTab === "files" && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
+            {/* Upload Card */}
+            <div className="lg:col-span-1 flex flex-col h-full">
+              <div className="card min-h-[400px] flex flex-col h-full">
+                <div className="flex items-center gap-3 mb-4">
                   <FileUp className="h-5 w-5 text-primary" />
                   <h2 className="text-xl font-semibold">Upload</h2>
-                </CardHeader>
-                <CardBody>
-                  <FileUploadForm
-                    userId={userId}
-                    onUploadSuccess={handleFileUploadSuccess}
-                    currentFolder={currentFolder}
-                  />
-                </CardBody>
-              </Card>
+                </div>
+                <FileUploadForm
+                  userId={userId}
+                  onUploadSuccess={handleFileUploadSuccess}
+                  currentFolder={currentFolder}
+                />
+              </div>
             </div>
-
-            <div className="lg:col-span-2">
-              <Card className="border border-default-200 bg-default-50 shadow-sm hover:shadow-md transition-shadow">
-                <CardHeader className="flex gap-3">
+            {/* Files Card */}
+            <div className="lg:col-span-2 flex flex-col h-full">
+              <div className="card min-h-[400px] flex flex-col h-full">
+                <div className="flex items-center gap-3 mb-4">
                   <FileText className="h-5 w-5 text-primary" />
                   <h2 className="text-xl font-semibold">Your Files</h2>
-                </CardHeader>
-                <CardBody>
-                  <FileList
-                    userId={userId}
-                    refreshTrigger={refreshTrigger}
-                    onFolderChange={handleFolderChange}
-                  />
-                </CardBody>
-              </Card>
+                </div>
+                <FileList
+                  userId={userId}
+                  refreshTrigger={refreshTrigger}
+                  onFolderChange={handleFolderChange}
+                />
+              </div>
             </div>
           </div>
-        </Tab>
+        )}
 
-        <Tab
-          key="profile"
-          title={
-            <div className="flex items-center gap-3">
-              <User className="h-5 w-5" />
-              <span className="font-medium">Profile</span>
-            </div>
-          }
-        >
-          <div className="mt-8">
+        {activeTab === "profile" && (
+          <div className="card mt-8 max-w-xl mx-auto">
             <UserProfile />
           </div>
-        </Tab>
-      </Tabs>
+        )}
+      </div>
     </>
   );
 }
