@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
       fileUrl: "",
       thumbnailUrl: null,
       userId,
-      parentId,
+      parentId: parentId ? parentId : null, // Ensure null, not empty string
       isFolder: true,
       isStarred: false,
       isTrashed: false,

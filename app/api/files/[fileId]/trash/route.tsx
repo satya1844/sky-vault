@@ -39,7 +39,12 @@ export async function PATCH(
       .where(and(eq(files.id, fileId), eq(files.userId, userId)))
       .returning();
 
-    const action = updatedFile.isTrashed ? "moved to trash" : "restored";
-    return NextResponse.json({
-      ...updatedFile,
-      message: `
+    return NextResponse.json(updatedFile);
+  } catch (error) {
+    console.error("Error trashing file:", error);
+    return NextResponse.json(
+      { error: "Failed to update file" },
+      { status: 500 }
+    );
+  }
+}
