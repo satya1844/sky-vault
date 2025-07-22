@@ -21,6 +21,7 @@ import {
   ModalFooter,
 } from "@heroui/modal";
 import axios from "axios";
+import "@/styles/globals.css";
 
 interface FileUploadFormProps {
   userId: string;
@@ -220,14 +221,14 @@ export default function FileUploadForm({
             ? "border-danger/30 bg-danger/5"
             : file
               ? "border-primary/30 bg-primary/5"
-              : "border-default-300 hover:border-primary/5"
+              : "border-border hover:border-primary/50"
         }`}
       >
         {!file ? (
           <div className="space-y-3">
             <FileUp className="h-12 w-12 mx-auto text-primary/70" />
             <div>
-              <p className="text-default-600">
+              <p className="text-secondary-foreground">
                 Drag and drop your image here, or{" "}
                 <button
                   type="button"
@@ -237,7 +238,7 @@ export default function FileUploadForm({
                   browse
                 </button>
               </p>
-              <p className="text-xs text-default-500 mt-1">Images up to 5MB</p>
+              <p className="text-xs text-secondary-foreground mt-1">Images up to 5MB</p>
             </div>
             <Input
               type="file"
@@ -258,7 +259,7 @@ export default function FileUploadForm({
                   <p className="text-sm font-medium truncate max-w-[180px]">
                     {file.name}
                   </p>
-                  <p className="text-xs text-default-500">
+                  <p className="text-xs text-secondary-foreground">
                     {file.size < 1024
                       ? `${file.size} B`
                       : file.size < 1024 * 1024
@@ -272,14 +273,14 @@ export default function FileUploadForm({
                 variant="light"
                 size="sm"
                 onClick={clearFile}
-                className="text-default-500"
+                className="text-secondary-foreground"
               >
                 <X className="h-4 w-4" />
               </Button>
             </div>
 
             {error && (
-              <div className="bg-danger-5 text-danger-700 p-3 rounded-lg flex items-center gap-2">
+              <div className="bg-red-900 text-red-200 p-3 rounded-lg flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4" />
                 <span className="text-sm">{error}</span>
               </div>
@@ -311,9 +312,9 @@ export default function FileUploadForm({
       </div>
 
       {/* Upload tips */}
-      <div className="bg-default-100/5 p-4 rounded-lg">
-        <h4 className="text-sm font-medium mb-2">Tips</h4>
-        <ul className="text-xs text-default-600 space-y-1">
+      <div className="bg-card p-4 rounded-lg border border-border">
+        <h4 className="text-sm font-medium mb-2 text-foreground">Tips</h4>
+        <ul className="text-xs text-secondary-foreground space-y-1">
           <li>• Images are private and only visible to you</li>
           <li>• Supported formats: JPG, PNG, GIF, WebP</li>
           <li>• Maximum file size: 5MB</li>
@@ -326,24 +327,24 @@ export default function FileUploadForm({
         onOpenChange={setFolderModalOpen}
         backdrop="blur"
         classNames={{
-          base: "border border-default-200 bg-default-5",
-          header: "border-b border-default-200",
-          footer: "border-t border-default-200",
+          base: "border border-border bg-card",
+          header: "border-b border-border",
+          footer: "border-t border-border",
         }}
       >
         <ModalContent>
           <ModalHeader className="flex gap-2 items-center">
             <FolderPlus className="h-5 w-5 text-primary" />
-            <span>New Folder</span>
+            <span className="text-foreground">New Folder</span>
           </ModalHeader>
           <ModalBody>
             <div className="space-y-4">
-              <p className="text-sm text-default-600">
+              <p className="text-sm text-secondary-foreground">
                 Enter a name for your folder:
               </p>
               <Input
                 type="text"
-                label="Folder Name"
+                
                 placeholder="My Images"
                 value={folderName}
                 onChange={(e) => setFolderName(e.target.value)}

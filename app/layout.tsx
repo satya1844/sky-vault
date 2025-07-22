@@ -1,16 +1,23 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Noto_Sans, Quicksand } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Providers } from "./providers";
-import "./globals.css";
+import "@/styles/globals.css";
 
-const inter = Inter({
+const notoSans = Noto_Sans({
   subsets: ["latin"],
-  variable: "--font-sans", // Change to match config/font.ts
+  variable: "--font-sans",
+  weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
+});
+
+const quicksand = Quicksand({
+  subsets: ["latin"],
+  variable: "--font-quicksand",
+  weight: ["300", "400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
-  title: "Droply",
+  title: "Sky vault",
   description: "Secure cloud storage for your images, powered by ImageKit",
 };
 
@@ -21,9 +28,9 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html lang="en" className="dark">
+      <html lang="en">
         <body
-          className={`${inter.variable} antialiased bg-background text-foreground`}
+          className={`${notoSans.variable} ${quicksand.variable} antialiased bg-background text-foreground`}
         >
           <Providers>{children}</Providers>
         </body>

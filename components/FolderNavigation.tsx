@@ -2,6 +2,7 @@
 
 import { ArrowUpFromLine } from "lucide-react";
 import { Button } from "@heroui/button";
+import '@/styles/globals.css'
 
 interface FolderNavigationProps {
   folderPath: Array<{ id: string; name: string }>;
@@ -35,7 +36,7 @@ export default function FolderNavigation({
       </Button>
       {folderPath.map((folder, index) => (
         <div key={folder.id} className="flex items-center">
-          <span className="mx-1 text-default-400">/</span>
+          <span className="mx-1 text-secondary-foreground">/</span>
           <Button
             variant="flat"
             size="sm"

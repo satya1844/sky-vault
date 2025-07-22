@@ -19,24 +19,24 @@ export default function UserProfile() {
     return (
       <div className="flex flex-col justify-center items-center p-12">
         <Spinner size="lg" color="primary" />
-        <p className="mt-4 text-default-600">Loading your profile...</p>
+        <p className="mt-4 text-secondary-foreground">Loading your profile...</p>
       </div>
     );
   }
 
   if (!isSignedIn) {
     return (
-      <Card className="max-w-md mx-auto border border-default-200 bg-default-50 shadow-sm hover:shadow-md transition-shadow">
+      <Card className="max-w-md mx-auto border border-border bg-card shadow-sm hover:shadow-md transition-shadow">
         <CardHeader className="flex gap-3">
           <User className="h-6 w-6 text-primary" />
-          <h2 className="text-xl font-semibold">User Profile</h2>
+          <h2 className="text-xl font-semibold text-foreground">User Profile</h2>
         </CardHeader>
         <Divider />
         <CardBody className="text-center py-10">
           <div className="mb-6">
             <Avatar name="Guest" size="lg" className="mx-auto mb-4" />
-            <p className="text-lg font-medium">Not Signed In</p>
-            <p className="text-default-500 mt-2">
+            <p className="text-lg font-medium text-foreground">Not Signed In</p>
+            <p className="text-secondary-foreground mt-2">
               Please sign in to access your profile
             </p>
           </div>
@@ -72,10 +72,10 @@ export default function UserProfile() {
   };
 
   return (
-    <Card className="max-w-md mx-auto border border-default-200 bg-default-50 shadow-sm hover:shadow-md transition-shadow">
+    <Card className="max-w-md mx-auto border border-border bg-card shadow-sm hover:shadow-md transition-shadow">
       <CardHeader className="flex gap-3">
         <User className="h-6 w-6 text-primary" />
-        <h2 className="text-xl font-semibold">User Profile</h2>
+        <h2 className="text-xl font-semibold text-foreground">User Profile</h2>
       </CardHeader>
       <Divider />
       <CardBody className="py-6">
@@ -94,9 +94,9 @@ export default function UserProfile() {
               className="mb-4 h-24 w-24 text-lg"
             />
           )}
-          <h3 className="text-xl font-semibold">{fullName}</h3>
+          <h3 className="text-xl font-semibold text-foreground">{fullName}</h3>
           {user.emailAddresses && user.emailAddresses.length > 0 && (
-            <div className="flex items-center gap-2 mt-1 text-default-500">
+            <div className="flex items-center gap-2 mt-1 text-secondary-foreground">
               <Mail className="h-4 w-4" />
               <span>{email}</span>
             </div>
@@ -119,7 +119,7 @@ export default function UserProfile() {
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-2">
               <Shield className="h-5 w-5 text-primary/70" />
-              <span className="font-medium">Account Status</span>
+              <span className="font-medium text-foreground">Account Status</span>
             </div>
             <Badge
               color="success"
@@ -133,7 +133,7 @@ export default function UserProfile() {
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-2">
               <Mail className="h-5 w-5 text-primary/70" />
-              <span className="font-medium">Email Verification</span>
+              <span className="font-medium text-foreground">Email Verification</span>
             </div>
             <Badge
               color={

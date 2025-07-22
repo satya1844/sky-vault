@@ -54,32 +54,13 @@ export default function SignUpForm() {
     setAuthError(null);
 
     try {
-      // First create the sign-up attempt
-      const result = await signUp.create({
+      await signUp.create({
         emailAddress: data.email,
         password: data.password,
       });
 
-      // Check the result status
-      if (result.status === "complete") {
-        await setActive({ session: result.createdSessionId });
-        router.push("/dashboard");
-      } else if (result.status === "missing_requirements") {
-        // This is the important part - prepare verification after checking status
-        const verificationResponse = await signUp.prepareEmailAddressVerification({
-          strategy: "email_code"
-        });
-        
-        if (verificationResponse) {
-          console.log("Verification email sent");
-          setVerifying(true);
-        } else {
-          setAuthError("Failed to send verification email");
-        }
-      } else {
-        console.error("Unexpected signup status:", result.status);
-        setAuthError("An unexpected error occurred during sign-up.");
-      }
+      await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
+      setVerifying(true);
     } catch (error: any) {
       console.error("Sign-up error:", error);
       setAuthError(
@@ -316,8 +297,6 @@ export default function SignUpForm() {
               </p>
             </div>
           </div>
-
-          <div id="clerk-captcha" data-clerk-captcha></div>
 
           <Button
             type="submit"

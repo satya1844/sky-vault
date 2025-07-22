@@ -16,6 +16,19 @@ import {
 import { relations } from "drizzle-orm";
 
 /**
+ * Users Table
+ * 
+ * This table stores user information, synced with Clerk.
+ */
+export const users = pgTable("users", {
+  id: text("id").primaryKey(), // User ID from Clerk
+  firstName: text("first_name"),
+  lastName: text("last_name"),
+  email: text("email").notNull().unique(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+/**
  * Files Table
  *
  * This table stores all files and folders in our Droply.
@@ -69,6 +82,21 @@ export const filesRelations = relations(files, ({ one, many }) => ({
 
   // Relationship to child files/folders
   children: many(files),
+
+  // Relationship to user
+  user: one(users, {
+    fields: [files.userId],
+    references: [users.id],
+  }),
+}));
+
+/**
+ * User Relations
+ * 
+ * This defines the relationship between users and files.
+ */
+export const usersRelations = relations(users, ({ many }) => ({
+  files: many(files),
 }));
 
 /**
@@ -80,3 +108,5 @@ export const filesRelations = relations(files, ({ one, many }) => ({
  */
 export type File = typeof files.$inferSelect;
 export type NewFile = typeof files.$inferInsert;
+export type User = typeof users.$inferSelect;
+export type NewUser = typeof users.$inferInsert;

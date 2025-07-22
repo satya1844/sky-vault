@@ -420,7 +420,7 @@ export default function FileList({
       ) : (
         <Card
           shadow="sm"
-          className="border border-default-200 bg-default-50 overflow-hidden"
+          className="border border-border bg-card overflow-hidden"
         >
           <div className="overflow-x-auto">
             <Table
@@ -430,7 +430,7 @@ export default function FileList({
               selectionMode="none"
               classNames={{
                 base: "min-w-full",
-                th: "bg-default-100 text-default-800 font-medium text-sm",
+                th: "bg-secondary text-foreground font-medium text-sm",
                 td: "py-4",
               }}
             >
@@ -447,7 +447,7 @@ export default function FileList({
                 {filteredFiles.map((file) => (
                   <TableRow
                     key={file.id}
-                    className={`hover:bg-default-100 transition-colors ${
+                    className={`hover:bg-secondary transition-colors ${
                       file.isFolder || file.type.startsWith("image/")
                         ? "cursor-pointer"
                         : ""
@@ -458,7 +458,7 @@ export default function FileList({
                       <div className="flex items-center gap-3">
                         <FileIcon file={file} />
                         <div>
-                          <div className="font-medium flex items-center gap-2 text-default-800">
+                          <div className="font-medium flex items-center gap-2 text-foreground">
                             <span className="truncate max-w-[150px] sm:max-w-[200px] md:max-w-[300px]">
                               {file.name}
                             </span>
@@ -472,16 +472,16 @@ export default function FileList({
                             )}
                             {file.isFolder && (
                               <Tooltip content="Folder">
-                                <Folder className="h-3 w-3 text-default-400" />
+                                <Folder className="h-3 w-3 text-secondary-foreground" />
                               </Tooltip>
                             )}
                             {file.type.startsWith("image/") && (
                               <Tooltip content="Click to view image">
-                                <ExternalLink className="h-3 w-3 text-default-400" />
+                                <ExternalLink className="h-3 w-3 text-secondary-foreground" />
                               </Tooltip>
                             )}
                           </div>
-                          <div className="text-xs text-default-500 sm:hidden">
+                          <div className="text-xs text-secondary-foreground sm:hidden">
                             {formatDistanceToNow(new Date(file.createdAt), {
                               addSuffix: true,
                             })}
@@ -490,12 +490,12 @@ export default function FileList({
                       </div>
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">
-                      <div className="text-xs text-default-500">
+                      <div className="text-xs text-secondary-foreground">
                         {file.isFolder ? "Folder" : file.type}
                       </div>
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
-                      <div className="text-default-700">
+                      <div className="text-foreground">
                         {file.isFolder
                           ? "-"
                           : file.size < 1024
@@ -507,12 +507,12 @@ export default function FileList({
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">
                       <div>
-                        <div className="text-default-700">
+                        <div className="text-foreground">
                           {formatDistanceToNow(new Date(file.createdAt), {
                             addSuffix: true,
                           })}
                         </div>
-                        <div className="text-xs text-default-500 mt-1">
+                        <div className="text-xs text-secondary-foreground mt-1">
                           {format(new Date(file.createdAt), "MMMM d, yyyy")}
                         </div>
                       </div>

@@ -1,0 +1,98 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --background: 30 30 30; /* VS Code Dark BG */
+    --foreground: 212 212 212; /* VS Code Plain Text */
+    --card: 45 45 45; /* Editor Widget BG */
+    --card-foreground: 212 212 212;
+    --popover: 37 37 38; /* Editor Suggest Widget BG */
+    --popover-foreground: 212 212 212;
+    --primary: 0 122 204; /* VS Code Blue */
+    --primary-foreground: 255 255 255;
+    --secondary: 51 51 51; /* Editor Indent Guide */
+    --secondary-foreground: 212 212 212;
+    --border: 60 60 60; /* Contrast Border */
+    --input: 60 60 60; /* Input BG */
+    --ring: 0 122 204; /* Focus Border */
+  }
+
+  body {
+    min-height: 100vh;
+    background-color: rgb(var(--background));
+    color: rgb(var(--foreground));
+    position: relative;
+    font-family: 'Inter', sans-serif;
+  }
+
+  /* Grid background like Sky Vault header image */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background-image: 
+      linear-gradient(to right, #3b82f615 1px, transparent 1px),
+      linear-gradient(to bottom, #3b82f615 1px, transparent 1px);
+    background-size: 24px 24px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Layer content above grid */
+  main, nav, section, .card {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Input and form elements */
+  input, textarea, select {
+    padding: 0.25rem 0.5rem;
+    background-color: rgb(255 255 255);
+    border: 1px solid rgb(var(--border));
+    border-radius: 0.375rem;
+    color: black;
+  }
+
+  /* Headers like 'Sky Vault' title */
+  h1, h2, h3 {
+    font-weight: 700;
+    color: rgb(var(--foreground));
+  }
+
+  /* Add bottom border to section titles */
+  .section-title {
+    border-bottom: 1px solid #d1d5db; /* gray-300 */
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  /* Card styling */
+  .card {
+    background-color: rgb(var(--card));
+    border: 1px solid rgb(var(--border));
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    padding: 1.5rem;
+  }
+
+  /* Button base style */
+  .btn {
+    background-color: rgb(var(--primary));
+    color: rgb(var(--primary-foreground));
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    transition: background 0.2s ease;
+  }
+
+  .btn:hover {
+    background-color: rgb(29, 78, 216); /* darker blue */
+  }
+
+}

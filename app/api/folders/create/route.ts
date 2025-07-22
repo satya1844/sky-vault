@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { name, userId: bodyUserId, parentId = null } = body;
 
-    // Verify the user is creating a folder in their own account
+    
     if (bodyUserId !== userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if parent folder exists if parentId is provided
+    
     if (parentId) {
       const [parentFolder] = await db
         .select()
@@ -48,8 +48,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create folder record in database
-    const folderData = {
+      const folderData = {
       id: uuidv4(),
       name: name.trim(),
       path: `/folders/${userId}/${uuidv4()}`,

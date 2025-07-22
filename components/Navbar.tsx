@@ -129,14 +129,16 @@ export default function Navbar({ user }: NavbarProps) {
 
   return (
     <header
-      className={`bg-default-50 border-b border-default-200 sticky top-0 z-50 transition-shadow ${isScrolled ? "shadow-sm" : ""}`}
+      className={`bg-background border-b border-border sticky top-0 z-50 transition-shadow ${
+        isScrolled ? "shadow-sm" : ""
+      }`}
     >
       <div className="container mx-auto py-3 md:py-4 px-4 md:px-6">
         <div className="flex justify-between items-center">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 z-10">
             <CloudUpload className="h-6 w-6 text-primary" />
-            <h1 className="text-xl font-bold">Droply</h1>
+            <h1 className="text-xl font-bold text-foreground">Sky Vault</h1>
           </Link>
 
           {/* Desktop Navigation */}
@@ -180,7 +182,7 @@ export default function Navbar({ user }: NavbarProps) {
                           className="h-8 w-8 flex-shrink-0"
                           fallback={<User className="h-4 w-4" />}
                         />
-                        <span className="text-default-600 hidden sm:inline">
+                        <span className="text-foreground hidden sm:inline">
                           {userDetails.displayName}
                         </span>
                       </div>
@@ -253,7 +255,7 @@ export default function Navbar({ user }: NavbarProps) {
           {/* Mobile Menu */}
           <div
             ref={mobileMenuRef}
-            className={`fixed top-0 right-0 bottom-0 w-4/5 max-w-sm bg-default-50 z-40 flex flex-col pt-20 px-6 shadow-xl transition-transform duration-300 ease-in-out ${
+            className={`fixed top-0 right-0 bottom-0 w-4/5 max-w-sm bg-background z-40 flex flex-col pt-20 px-6 shadow-xl transition-transform duration-300 ease-in-out ${
               isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
             } md:hidden`}
           >
@@ -283,7 +285,7 @@ export default function Navbar({ user }: NavbarProps) {
             <SignedIn>
               <div className="flex flex-col gap-6">
                 {/* User info */}
-                <div className="flex items-center gap-3 py-4 border-b border-default-200">
+                <div className="flex items-center gap-3 py-4 border-b border-border">
                   <Avatar
                     name={userDetails.initials}
                     size="md"
@@ -292,8 +294,8 @@ export default function Navbar({ user }: NavbarProps) {
                     fallback={<User className="h-5 w-5" />}
                   />
                   <div>
-                    <p className="font-medium">{userDetails.displayName}</p>
-                    <p className="text-sm text-default-500">
+                    <p className="font-medium text-foreground">{userDetails.displayName}</p>
+                    <p className="text-sm text-secondary-foreground">
                       {userDetails.email}
                     </p>
                   </div>
@@ -304,7 +306,7 @@ export default function Navbar({ user }: NavbarProps) {
                   {!isOnDashboard && (
                     <Link
                       href="/dashboard"
-                      className="py-2 px-3 hover:bg-default-100 rounded-md transition-colors"
+                      className="py-2 px-3 hover:bg-secondary rounded-md transition-colors"
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
                       Dashboard
@@ -312,13 +314,13 @@ export default function Navbar({ user }: NavbarProps) {
                   )}
                   <Link
                     href="/dashboard?tab=profile"
-                    className="py-2 px-3 hover:bg-default-100 rounded-md transition-colors"
+                    className="py-2 px-3 hover:bg-secondary rounded-md transition-colors"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     Profile
                   </Link>
                   <button
-                    className="py-2 px-3 text-left text-danger hover:bg-danger-50 rounded-md transition-colors mt-4"
+                    className="py-2 px-3 text-left text-red-500 hover:bg-danger-50 rounded-md transition-colors mt-4"
                     onClick={() => {
                       setIsMobileMenuOpen(false);
                       handleSignOut();
