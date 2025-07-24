@@ -2,6 +2,30 @@
 const {heroui} = require("@heroui/theme");
 
 /** @type {import('tailwindcss').Config} */
+
+
+const config = {
+  theme: {
+    extend: {
+      colors: {
+        background: "rgb(var(--background))",
+        foreground: "rgb(var(--foreground))",
+        card: "rgb(var(--card))",
+        "card-foreground": "rgb(var(--card-foreground))",
+        primary: "rgb(var(--primary))",
+        "primary-foreground": "rgb(var(--primary-foreground))",
+        border: "rgb(var(--border))",
+        input: "rgb(var(--input))",
+        muted: "rgb(var(--muted))",
+        "muted-foreground": "rgb(var(--muted-foreground))",
+      },
+      borderRadius: {
+        DEFAULT: "var(--radius)",
+      },
+    },
+  },
+};
+
 module.exports = {
   darkMode: false,
   content: [
@@ -31,3 +55,5 @@ module.exports = {
   darkMode: "class",
   plugins: [heroui()],
 };
+
+export default config;

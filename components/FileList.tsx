@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo, useCallback } from "react";
-import { Folder, Star, Trash, X, ExternalLink } from "lucide-react";
+import { Folder, Star, Trash, X, ExternalLink, StarIcon, EyeClosed } from "lucide-react";
 import {
   Table,
   TableHeader,
@@ -9,11 +9,14 @@ import {
   TableBody,
   TableRow,
   TableCell,
+
 } from "@heroui/table";
 import { Divider } from "@heroui/divider";
 import { Tooltip } from "@heroui/tooltip";
 import { Card } from "@heroui/card";
 import { addToast } from "@heroui/toast";
+
+
 import { formatDistanceToNow, format } from "date-fns";
 import type { File as FileType } from "@/lib/db/schema";
 import axios from "axios";
@@ -30,13 +33,14 @@ interface FileListProps {
   userId: string;
   refreshTrigger?: number;
   onFolderChange?: (folderId: string | null) => void;
+  onDeleteSuccess?: () => void;
 }
 
-export default function FileList({
-  userId,
-  refreshTrigger = 0,
-  onFolderChange,
-}: FileListProps) {
+  export default function FileList({
+    userId,
+    refreshTrigger = 0,
+    onFolderChange,
+  }: FileListProps) {
   const [files, setFiles] = useState<FileType[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("all");
@@ -67,6 +71,29 @@ export default function FileList({
         title: "Error Loading Files",
         description: "We couldn't load your files. Please try again later.",
         color: "danger",
+        classNames: {
+    base: `
+      custom-toast-width
+      bg-zinc-900
+      text-white
+      px-4
+      py-3
+      border
+      border-zinc-700
+      shadow-xl
+      flex
+      items-start
+      gap-3
+    `,
+    closeButton: `
+      hover:bg-white/10
+      transition
+      p-1
+      rounded
+      ml-auto
+    `,
+  },
+
       });
     } finally {
       setLoading(false);
@@ -115,18 +142,80 @@ export default function FileList({
       // Show toast
       const file = files.find((f) => f.id === fileId);
       addToast({
-        title: file?.isStarred ? "Removed from Starred" : "Added to Starred",
-        description: `"${file?.name}" has been ${
-          file?.isStarred ? "removed from" : "added to"
-        } your starred files`,
-        color: "success",
-      });
+  title: file?.isStarred ? "Removed from Starred" : "Added to Starred",
+  description: `"${file?.name}" has been ${file?.isStarred ? "removed from" : "added to"} your starred files.`,
+  color: file?.isStarred ? "warning" : "success",
+  variant: "bordered",
+  radius: "lg",
+  timeout: 5000,
+  shouldShowTimeoutProgress: true,
+
+  // 🔔 Dynamic icon based on star state
+  icon: file?.isStarred ? (
+    <StarIcon className="w-5 h-5 text-yellow-400" />
+  ) : (
+    <StarIcon className="w-5 h-5 text-green-400" />
+  ),
+
+  // 👁️ Better close icon visibility
+  closeIcon: <EyeClosed className="w-4 h-4 text-gray-300 hover:text-white transition" />,
+
+  // 🎨 Custom styles
+  classNames: {
+    base: `
+      custom-toast-width
+      bg-zinc-900
+      text-white
+      px-4
+      py-3
+      border
+      border-zinc-700
+      shadow-xl
+      flex
+      items-start
+      gap-3
+    `,
+    closeButton: `
+      hover:bg-white/10
+      transition
+      p-1
+      rounded
+      ml-auto
+    `,
+  },
+});
+
+
+
     } catch (error) {
       console.error("Error starring file:", error);
       addToast({
         title: "Action Failed",
         description: "We couldn't update the star status. Please try again.",
         color: "danger",
+        classNames: {
+    base: `
+      custom-toast-width
+      bg-zinc-900
+      text-white
+      px-4
+      py-3
+      border
+      border-zinc-700
+      shadow-xl
+      flex
+      items-start
+      gap-3
+    `,
+    closeButton: `
+      hover:bg-white/10
+      transition
+      p-1
+      rounded
+      ml-auto
+    `,
+  },
+
       });
     }
   };
@@ -142,15 +231,36 @@ export default function FileList({
           file.id === fileId ? { ...file, isTrashed: !file.isTrashed } : file
         )
       );
+      const file = files.find((f) => f.id === fileId);
 
       // Show toast
-      const file = files.find((f) => f.id === fileId);
       addToast({
         title: responseData.isTrashed ? "Moved to Trash" : "Restored from Trash",
-        description: `"${file?.name}" has been ${
-          responseData.isTrashed ? "moved to trash" : "restored"
-        }`,
+        description: `"${file?.name}" has been ${responseData.isTrashed ? "moved to trash" : "restored"
+          }`,
         color: "success",
+        classNames: {
+    base: `
+      custom-toast-width
+      bg-zinc-900
+      text-white
+      px-4
+      py-3
+      border
+      border-zinc-700
+      shadow-xl
+      flex
+      items-start
+      gap-3
+    `,
+    closeButton: `
+      hover:bg-white/10
+      transition
+      p-1
+      rounded
+      ml-auto
+    `,
+  },
       });
     } catch (error) {
       console.error("Error trashing file:", error);
@@ -158,32 +268,72 @@ export default function FileList({
         title: "Action Failed",
         description: "We couldn't update the file status. Please try again.",
         color: "danger",
+        classNames: {
+    base: `
+      custom-toast-width
+      bg-zinc-900
+      text-white
+      px-4
+      py-3
+      border
+      border-zinc-700
+      shadow-xl
+      flex
+      items-start
+      gap-3
+    `,
+    closeButton: `
+      hover:bg-white/10
+      transition
+      p-1
+      rounded
+      ml-auto
+    `,
+  },
       });
     }
   };
 
   const handleDeleteFile = async (fileId: string) => {
     try {
-      // Store file info before deletion for the toast message
       const fileToDelete = files.find((f) => f.id === fileId);
       const fileName = fileToDelete?.name || "File";
 
-      // Send delete request
       const response = await axios.delete(`/api/files/${fileId}/delete`);
 
       if (response.data.success) {
-        // Remove file from local state
-        setFiles(files.filter((file) => file.id !== fileId));
-
-        // Show success toast
         addToast({
           title: "File Permanently Deleted",
           description: `"${fileName}" has been permanently removed`,
           color: "success",
+          classNames: {
+    base: `
+      custom-toast-width
+      bg-zinc-900
+      text-white
+      px-4
+      py-3
+      border
+      border-zinc-700
+      shadow-xl
+      flex
+      items-start
+      gap-3
+    `,
+    closeButton: `
+      hover:bg-white/10
+      transition
+      p-1
+      rounded
+      ml-auto
+    `,
+  },
         });
 
-        // Close modal if it was open
         setDeleteModalOpen(false);
+
+        // Call parent callback to refresh file list
+
       } else {
         throw new Error(response.data.error || "Failed to delete file");
       }
@@ -193,9 +343,32 @@ export default function FileList({
         title: "Deletion Failed",
         description: "We couldn't delete the file. Please try again later.",
         color: "danger",
+        classNames: {
+    base: `
+      custom-toast-width
+      bg-zinc-900
+      text-white
+      px-4
+      py-3
+      border
+      border-zinc-700
+      shadow-xl
+      flex
+      items-start
+      gap-3
+    `,
+    closeButton: `
+      hover:bg-white/10
+      transition
+      p-1
+      rounded
+      ml-auto
+    `,
+  },
       });
     }
   };
+
 
   const handleEmptyTrash = async () => {
     try {
@@ -209,6 +382,28 @@ export default function FileList({
         title: "Trash Emptied",
         description: `All ${trashCount} items have been permanently deleted`,
         color: "success",
+        classNames: {
+    base: `
+      custom-toast-width
+      bg-zinc-900
+      text-white
+      px-4
+      py-3
+      border
+      border-zinc-700
+      shadow-xl
+      flex
+      items-start
+      gap-3
+    `,
+    closeButton: `
+      hover:bg-white/10
+      transition
+      p-1
+      rounded
+      ml-auto
+    `,
+  },
       });
 
       // Close modal
@@ -219,6 +414,28 @@ export default function FileList({
         title: "Action Failed",
         description: "We couldn't empty the trash. Please try again later.",
         color: "danger",
+        classNames: {
+    base: `
+      custom-toast-width
+      bg-zinc-900
+      text-white
+      px-4
+      py-3
+      border
+      border-zinc-700
+      shadow-xl
+      flex
+      items-start
+      gap-3
+    `,
+    closeButton: `
+      hover:bg-white/10
+      transition
+      p-1
+      rounded
+      ml-auto
+    `,
+  },
       });
     }
   };
@@ -231,6 +448,28 @@ export default function FileList({
         title: "Preparing Download",
         description: `Getting "${file.name}" ready for download...`,
         color: "primary",
+        classNames: {
+    base: `
+      custom-toast-width
+      bg-zinc-900
+      text-white
+      px-4
+      py-3
+      border
+      border-zinc-700
+      shadow-xl
+      flex
+      items-start
+      gap-3
+    `,
+    closeButton: `
+      hover:bg-white/10
+      transition
+      p-1
+      rounded
+      ml-auto
+    `,
+  },
       });
 
       // For images, we can use the ImageKit URL directly with optimized settings
@@ -260,6 +499,28 @@ export default function FileList({
           title: "Download Ready",
           description: `"${file.name}" is ready to download.`,
           color: "success",
+          classNames: {
+    base: `
+      custom-toast-width
+      bg-zinc-900
+      text-white
+      px-4
+      py-3
+      border
+      border-zinc-700
+      shadow-xl
+      flex
+      items-start
+      gap-3
+    `,
+    closeButton: `
+      hover:bg-white/10
+      transition
+      p-1
+      rounded
+      ml-auto
+    `,
+  },
         });
 
         // Trigger download
@@ -290,6 +551,28 @@ export default function FileList({
           title: "Download Ready",
           description: `"${file.name}" is ready to download.`,
           color: "success",
+          classNames: {
+    base: `
+      custom-toast-width
+      bg-zinc-900
+      text-white
+      px-4
+      py-3
+      border
+      border-zinc-700
+      shadow-xl
+      flex
+      items-start
+      gap-3
+    `,
+    closeButton: `
+      hover:bg-white/10
+      transition
+      p-1
+      rounded
+      ml-auto
+    `,
+  },
         });
 
         // Trigger download
@@ -305,6 +588,28 @@ export default function FileList({
         title: "Download Failed",
         description: "We couldn't download the file. Please try again later.",
         color: "danger",
+        classNames: {
+    base: `
+      custom-toast-width
+      bg-zinc-900
+      text-white
+      px-4
+      py-3
+      border
+      border-zinc-700
+      shadow-xl
+      flex
+      items-start
+      gap-3
+    `,
+    closeButton: `
+      hover:bg-white/10
+      transition
+      p-1
+      rounded
+      ml-auto
+    `,
+  },
       });
     }
   };
@@ -447,11 +752,10 @@ export default function FileList({
                 {filteredFiles.map((file) => (
                   <TableRow
                     key={file.id}
-                    className={`hover:bg-secondary transition-colors ${
-                      file.isFolder || file.type.startsWith("image/")
-                        ? "cursor-pointer"
-                        : ""
-                    }`}
+                    className={`hover:bg-secondary transition-colors ${file.isFolder || file.type.startsWith("image/")
+                      ? "cursor-pointer"
+                      : ""
+                      }`}
                     onClick={() => handleItemClick(file)}
                   >
                     <TableCell>

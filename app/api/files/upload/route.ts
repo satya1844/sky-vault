@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getAuth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 import { files } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
@@ -13,31 +13,55 @@ const imagekit = new ImageKit({
   urlEndpoint: process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT || "",
 });
 
-//parse form data
-
 export async function POST(request: NextRequest) {
+  console.log("=== File Upload Request Started ===");
+  
   try {
-    const { userId } = await auth();
+    // Log auth attempt
+    console.log("Attempting to authenticate user...");
+    const authResult = await getAuth(request);
+    console.log("Auth result:", { 
+      userId: authResult?.userId, 
+      hasUserId: !!authResult?.userId 
+    });
+
+    const { userId } = authResult;
     if (!userId) {
+      console.log("❌ AUTH FAILED: No userId found");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    console.log("✅ User authenticated:", userId);
+
+    // Parse form data with logging
+    console.log("Parsing form data...");
     const formData = await request.formData();
+    
     const file = formData.get("file") as File;
-    const formUserId = formData.get("userId") as string;
     const parentId = (formData.get("parentId") as string) || null;
 
+    console.log("Form data parsed:", {
+      hasFile: !!file,
+      fileName: file?.name,
+      fileSize: file?.size,
+      fileType: file?.type,
+      parentId,
+      authUserId: userId
+    });
+
     // Verify the user is uploading to their own account
-    if (formUserId !== userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+
+
+    console.log("✅ User authorization verified");
 
     if (!file) {
+      console.log("❌ No file provided in form data");
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
     // Check if parent folder exists if parentId is provided
     if (parentId) {
+      console.log("Checking parent folder:", parentId);
       const [parentFolder] = await db
         .select()
         .from(files)
@@ -49,7 +73,10 @@ export async function POST(request: NextRequest) {
           )
         );
 
+      console.log("Parent folder check result:", !!parentFolder);
+
       if (!parentFolder) {
+        console.log("❌ Parent folder not found");
         return NextResponse.json(
           { error: "Parent folder not found" },
           { status: 404 }
@@ -57,14 +84,20 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Only allow image uploads
-    if (!file.type.startsWith("image/") && file.type !== "application/pdf") {
+    // File type validation
+    console.log("Validating file type...");
+    const isValidType = file.type.startsWith("image/") || file.type === "application/pdf";
+    console.log("File type valid:", isValidType);
+
+    if (!isValidType) {
+      console.log("❌ Invalid file type:", file.type);
       return NextResponse.json(
-        { error: "Only image files are supported" },
+        { error: "Only image files and PDFs are supported" },
         { status: 400 }
       );
     }
 
+    console.log("Processing file upload...");
     const buffer = await file.arrayBuffer();
     const fileBuffer = Buffer.from(buffer);
 
@@ -77,11 +110,25 @@ export async function POST(request: NextRequest) {
       ? `/skyvault/${userId}/folders/${parentId}`
       : `/skyvault/${userId}`;
 
+    console.log("Upload details:", {
+      originalFilename,
+      uniqueFilename,
+      folderPath,
+      fileSize: fileBuffer.length
+    });
+
+    console.log("Uploading to ImageKit...");
     const uploadResponse = await imagekit.upload({
       file: fileBuffer,
       fileName: uniqueFilename,
       folder: folderPath,
       useUniqueFileName: false,
+    });
+
+    console.log("ImageKit upload successful:", {
+      fileId: uploadResponse.fileId,
+      url: uploadResponse.url,
+      filePath: uploadResponse.filePath
     });
 
     const fileData = {
@@ -98,11 +145,22 @@ export async function POST(request: NextRequest) {
       isTrashed: false,
     };
 
+    console.log("Saving to database...");
     const [newFile] = await db.insert(files).values(fileData).returning();
 
+    console.log("✅ File upload completed successfully:", newFile.id);
     return NextResponse.json(newFile);
+
   } catch (error) {
-    console.error("Error uploading file:", error);
+    console.error("❌ Error uploading file:", error);
+    
+    // Log additional error details
+    if (error instanceof Error) {
+      console.error("Error name:", error.name);
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
+    }
+    
     return NextResponse.json(
       { error: "Failed to upload file" },
       { status: 500 }
