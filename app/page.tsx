@@ -12,8 +12,14 @@ import {
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { FaRegImage } from "react-icons/fa";
+import { Pacifico } from 'next/font/google';
 
-
+// Initialize the Pacifico font
+const pacifico = Pacifico({
+  weight: '400',
+  subsets: ['latin'],
+  display: 'swap',
+});
 
 export default function LandingPage() {
   return (
@@ -49,8 +55,8 @@ export default function LandingPage() {
 
       <section className="flex flex-col items-center justify-center min-h-[calc(100vh-80px)] max-w-5xl mx-auto px-6 text-center relative z-10">
         <div className="max-w-3xl">
-          <h1 className="font-sans text-4xl md:text-8xl font-bold text-gray-900  tracking-wider leading-tight">
-          SKYVAULT
+          <h1 className={`${pacifico.className} text-4xl md:text-8xl font-bold text-white tracking-wider leading-tight border-amber-950`}>
+            SkyVault
           </h1>
           <p className="font-sans mt-4 text-3xl text-gray-600 tracking-wide">
             Simple. Secure. Fast.

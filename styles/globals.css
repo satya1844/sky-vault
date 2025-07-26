@@ -2,98 +2,102 @@
 
 @layer base {
   :root {
-    --background: oklch(0.98 0 0);
-    --foreground: oklch(0.15 0 0);
+    --background: #020108;           /* oklch(0.98 0 0) */
+    --foreground: white;           /* oklch(0.15 0 0) */
 
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.15 0 0);
+    --card: #1D1D1D;                 /* oklch(1 0 0) */
+    --card-foreground: white;      /* oklch(0.15 0 0) */
 
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.15 0 0);
+    --popover: #ffffff;              /* oklch(1 0 0) */
+    --popover-foreground: #262626;   /* oklch(0.15 0 0) */
 
-    --primary: oklch(0.5 0.2 250);
-    --primary-foreground: oklch(1 0 0);
+    --primary: #5f5fff;              /* oklch(0.5 0.2 250) */
+    --primary-foreground: #ffffff;   /* oklch(1 0 0) */
 
-    --secondary: oklch(0.92 0 0);
-    --secondary-foreground: oklch(0.2 0 0);
+    --secondary: #ebebeb;            /* oklch(0.92 0 0) */
+    --secondary-foreground: #333333; /* oklch(0.2 0 0) */
 
-    --muted: oklch(0.9 0 0);
-    --muted-foreground: oklch(0.45 0 0);
+    --muted: #e6e6e6;                /* oklch(0.9 0 0) */
+    --muted-foreground: #737373;     /* oklch(0.45 0 0) */
 
-    --accent: oklch(0.94 0 0);
-    --accent-foreground: oklch(0.25 0 0);
+    --accent: #f0f0f0;               /* oklch(0.94 0 0) */
+    --accent-foreground: #404040;    /* oklch(0.25 0 0) */
 
-    --destructive: oklch(0.45 0.25 25);
-    --destructive-foreground: oklch(1 0 0);
+    --destructive: #d94c2d;          /* oklch(0.45 0.25 25) */
+    --destructive-foreground: #ffffff; /* oklch(1 0 0) */
 
-    --border: oklch(0.85 0 0);
-    --input: oklch(0.85 0 0);
-    --ring: oklch(0.5 0.2 250);
+    --border: #d9d9d9;               /* oklch(0.85 0 0) */
+    --input: #d9d9d9;                /* oklch(0.85 0 0) */
+    --ring: #5f5fff;                 /* oklch(0.5 0.2 250) */
 
     --radius: 0.5rem;
   }
 
   .dark {
-    --background: oklch(0.15 0 0);
-    --foreground: oklch(0.99 0 0);
+    --background: #262626;           /* oklch(0.15 0 0) */
+    --foreground: #fcfcfc;           /* oklch(0.99 0 0) */
 
-    --card: oklch(0.2 0 0);
-    --card-foreground: oklch(0.98 0 0);
+    --card: #333333;                 /* oklch(0.2 0 0) */
+    --card-foreground: #fafafa;      /* oklch(0.98 0 0) */
 
-    --popover: oklch(0.2 0 0);
-    --popover-foreground: oklch(0.98 0 0);
+    --popover: #333333;              /* oklch(0.2 0 0) */
+    --popover-foreground: #fafafa;   /* oklch(0.98 0 0) */
 
-    --primary: oklch(0.7 0.2 250);
-    --primary-foreground: oklch(0.1 0 0);
+    --primary: #8080ff;              /* oklch(0.7 0.2 250) */
+    --primary-foreground: #1a1a1a;   /* oklch(0.1 0 0) */
 
-    --secondary: oklch(0.3 0 0);
-    --secondary-foreground: oklch(0.98 0 0);
+    --secondary: #4d4d4d;            /* oklch(0.3 0 0) */
+    --secondary-foreground: #fcfcfc; /* oklch(0.98 0 0) */
 
-    --muted: oklch(0.25 0 0);
-    --muted-foreground: oklch(0.7 0 0);
+    --muted: #404040;                /* oklch(0.25 0 0) */
+    --muted-foreground: #b3b3b3;     /* oklch(0.7 0 0) */
 
-    --accent: oklch(0.35 0 0);
-    --accent-foreground: oklch(0.98 0 0);
+    --accent: #595959;               /* oklch(0.35 0 0) */
+    --accent-foreground: #fcfcfc;    /* oklch(0.98 0 0) */
 
-    --destructive: oklch(0.5 0.25 25);
-    --destructive-foreground: oklch(1 0 0);
+    --destructive: #d94c2d;          /* oklch(0.5 0.25 25) */
+    --destructive-foreground: #ffffff; /* oklch(1 0 0) */
 
-    --border: oklch(0.25 0 0);
-    --input: oklch(0.25 0 0);
-    --ring: oklch(0.6 0.2 250);
+    --border: #404040;               /* oklch(0.25 0 0) */
+    --input: #404040;                /* oklch(0.25 0 0) */
+    --ring: #6f6fff;                 /* oklch(0.6 0.2 250) */
   }
 
   body {
     min-height: 100vh;
-    background-color: rgb(var(--background));
-    color: rgb(var(--foreground));
-    font-family: 'Inter', sans-serif;
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: 'noto-sans', sans-serif;
     position: relative;
   }
 
   /* Inputs */
-  input,
+ 
   textarea,
   select {
     padding: 0.5rem 0.75rem;
-    background-color: rgb(var(--input));
-    border: 1px solid rgb(var(--border));
+    background-color: #262626; /* Use the dark background for inputs */
+    border: 1px solid var(--border);
     border-radius: var(--radius);
-    color: rgb(var(--foreground));
+    color: var(--foreground);
     outline: none;
   }
 
-  input:focus,
+
+
+
+
+
   textarea:focus,
   select:focus {
-    outline: 2px solid rgb(var(--ring));
+    outline: 2px solid var(--ring);
     outline-offset: 2px;
   }
 
   /* Headers */
   h1, h2, h3 {
     font-weight: 700;
-    color: rgb(var(--foreground));
+    color: var(--foreground);
   }
 
   /* Toast styles */
@@ -103,39 +107,31 @@
   }
 
   .toast {
-    background-color: rgb(var(--card));
-    color: rgb(var(--card-foreground));
+    background-color: var(--card);
+    color: var(--card-foreground);
     border-radius: var(--radius);
     padding: 0.75rem 1rem;
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-    border: 1px solid rgb(var(--border));
+    border: 1px solid var(--border);
   }
 
   /* Section title */
   .section-title {
     padding-bottom: 0.5rem;
     margin-bottom: 1rem;
-    border-bottom: 1px solid rgb(var(--border));
+    border-bottom: 1px solid var(--border);
     font-weight: 600;
     display: flex;
     align-items: center;
     gap: 0.5rem;
   }
 
-  /* Cards */
-  .card {
-    background-color: rgb(var(--card));
-    color: rgb(var(--card-foreground));
-    border-radius: calc(var(--radius) * 1.5);
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
-    padding: 1.5rem;
-    border: 1px solid rgb(var(--border));
-  }
+
 
   /* Buttons */
   .btn {
-    background-color: rgb(var(--primary));
-    color: rgb(var(--primary-foreground));
+    background-color: var(--primary);
+    color: var(--primary-foreground);
     padding: 0.5rem 1rem;
     border-radius: var(--radius);
     font-weight: 600;
@@ -143,7 +139,6 @@
   }
 
   .btn:hover {
-    background-color: oklch(0.45 0.2 250); /* darker primary */
+    background-color: #4d4dff; /* darker primary */
   }
-
 }

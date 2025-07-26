@@ -90,7 +90,7 @@ export const DesktopSidebar = ({
     <>
       <motion.div
         className={cn(
-  "sticky top-0 h-screen px-4 py-4 hidden md:flex md:flex-col  w-[300px] shrink-0",
+  "sticky bg-[#1D1D1D] rounded-[35px] top-0 h-screen m-5 px-4 py-4 hidden md:flex md:flex-col  w-[300px] shrink-0",
   className
 )}
 
@@ -263,7 +263,7 @@ export function SidebarDemo() {
           <Logo />
           {/* Storage Usage Indicator */}
           <div className="mt-6 px-4">
-            <div className="space-y-1">
+            <div className="space-y-1" title="You have 3.5 GB remaining">
               <div className="flex justify-between text-xs">
                 <span className="text-neutral-600 dark:text-neutral-400">Storage Used</span>
                 <span className="text-neutral-900 dark:text-neutral-200">65%</span>
@@ -299,6 +299,7 @@ export function SidebarDemo() {
                 />
               ),
             }}
+            className="truncate"
           />
         </div>
       </SidebarBody>

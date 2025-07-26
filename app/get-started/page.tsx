@@ -1,8 +1,7 @@
 import { Button } from "@heroui/button";
 import Link from "next/link";
 import { UploadCloud, Lock, Bot, Users, Link2, MessageSquare } from 'lucide-react';
-import { SignedIn, SignedOut } from "@clerk/nextjs"; // Add this import
-
+import { SignedIn, SignedOut } from "@clerk/nextjs";
 
 export default function GetStartedPage() {
   const features = [
@@ -39,18 +38,18 @@ export default function GetStartedPage() {
   ];
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center bg-white text-center">
+    <div className="min-h-screen w-full flex flex-col items-center justify-center bg-background text-white text-center">
       <div className="container mx-auto px-6 py-16 text-center">
-        <h1 className="text-5xl md:text-5xl font-bold font-quicksand mt-10 text-gray-900 mb-4">
+        <h1 className="text-5xl md:text-5xl font-bold font-quicksand mt-10 mb-4">
            Welcome to SkyVault!
         </h1>
-        <p className="text-lg text-gray-700 max-w-3xl mx-auto mb-12">
+        <p className="text-lg max-w-3xl mx-auto mb-12">
           Sky Vault is your all-in-one cloud workspace designed to make file management smarter and collaboration smoother. Whether you're uploading a single document or managing entire project folders, Sky Vault has you covered with powerful features and a beautifully simple interface.
         </p>
       </div>
 
       <div className="container mx-auto px-6">
-        <h2 className="text-3xl font-bold text-center text-gray-800 mb-12"> What You Can Do Here:</h2>
+        <h2 className="text-3xl font-bold text-center mb-12"> What You Can Do Here:</h2>
         {features.map((feature, index) => (
           <div key={index} className={`flex flex-col md:flex-row items-center justify-center my-10 ${index % 2 !== 0 ? 'md:flex-row-reverse' : ''}`}>
             <div className="md:w-1/2 p-4 flex justify-center">
@@ -59,8 +58,8 @@ export default function GetStartedPage() {
               </div>
             </div>
             <div className="md:w-1/2 p-4 flex flex-col justify-center items-center md:items-start">
-              <h3 className="text-2xl font-bold text-gray-800 mb-2">{feature.title}</h3>
-              <p className="text-gray-600">
+              <h3 className="text-2xl font-bold mb-2">{feature.title}</h3>
+              <p>
                 {feature.description}
               </p>
             </div>
@@ -69,10 +68,10 @@ export default function GetStartedPage() {
       </div>
 
       <div className="container mx-auto px-6 py-16 text-center">
-        <p className="text-lg text-gray-700 max-w-3xl mx-auto">
+        <p className="text-lg max-w-3xl mx-auto">
           With Sky Vault, you’re not just storing files — you’re building a smarter, faster, and more connected creative flow.
         </p>
-        <h2 className="text-3xl font-bold text-gray-800 my-8">
+        <h2 className="text-3xl font-bold my-8">
            Ready to unlock the vault? Let’s go.
         </h2>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -90,4 +89,4 @@ export default function GetStartedPage() {
       </div>
     </div>
   );
-} 
+}

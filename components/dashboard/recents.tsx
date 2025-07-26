@@ -168,7 +168,7 @@ export default function Recents({ userId, limit = 20, refreshTrigger = 0 }: Rece
     return (
       <div className="p-6">
         <h2 className="text-xl font-semibold mb-4">Recent Activity</h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {Array.from({ length: limit > 10 ? 10 : limit }).map((_, index) => (
             <div
               key={index}
@@ -188,9 +188,9 @@ export default function Recents({ userId, limit = 20, refreshTrigger = 0 }: Rece
 
   return (
     <div className="p-6">
-      <h2 className="text-xl font-semibold mb-4">Recent Activity</h2>
+     
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         {recentFiles.length === 0 ? (
           <div className="col-span-full text-center text-gray-500 dark:text-gray-400 italic py-8">
             Upload something, man! 🤘📂
@@ -202,65 +202,91 @@ export default function Recents({ userId, limit = 20, refreshTrigger = 0 }: Rece
             return (
               <div
                 key={file.id}
-                className={`group relative bg-[#1E1E1E] rounded-lg shadow-sm hover:shadow-md border border-[#2E2F2F] transition-all duration-200 p-4 ${
+                className={`group relative aspect-square rounded-2xl shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 overflow-hidden ${
                   file.isFolder || file.type.startsWith("image/") ? "cursor-pointer" : ""
                 }`}
                 onClick={() => handleItemClick(file)}
               >
-                {/* Thumbnail or Icon */}
-                <div className="aspect-square rounded-lg mb-3 overflow-hidden bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                {/* Background Image with Uniform Blur */}
+                <div className="absolute inset-0">
                   {thumbnailUrl ? (
                     <Image
                       src={thumbnailUrl}
                       alt={file.name}
-                      width={200}
-                      height={200}
-                      className="object-cover w-full h-full"
+                      fill
+                      className="object-cover"
                     />
                   ) : (
-                    getFileIcon(file)
+                    <div className="w-full h-full bg-gradient-to-br from-gray-600 to-gray-800 flex items-center justify-center">
+                      {getFileIcon(file)}
+                    </div>
                   )}
+                  {/* Uniform blur overlay for better text readability */}
+                  <div className="absolute inset-0 bg-black/15 backdrop-blur-[0.5px] group-hover:bg-black/5 group-hover:backdrop-blur-[0.25px] transition-all duration-300"></div>
                 </div>
 
-                {/* File/Folder Info */}
-                <div className="space-y-1">
-                  <h3 className="font-medium text-sm truncate" title={file.name}>
-                    {file.name}
-                  </h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {format(new Date(file.createdAt), "MMM d, yyyy")}
-                  </p>
-                  {!file.isFolder && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400 uppercase">
-                      {file.type.split('/')[1] || 'file'}
-                      {file.size && ` • ${formatFileSize(file.size)}`}
-                    </p>
-                  )}
+                {/* File/Folder Info Overlay - Author Card Style */}
+                <div className="absolute bottom-0 left-0 right-0 p-4">
+                  <div className="text-white w-full space-y-2">
+                    <button 
+                      className="font-semibold text-base text-white truncate w-full text-left hover:text-gray-200 transition-colors"
+                      title={file.name}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleItemClick(file);
+                      }}
+                      aria-label={`Open ${file.name}`}
+                    >
+                      {file.name}
+                    </button>
+                    <div className="text-xs text-gray-400">
+                      {format(new Date(file.createdAt), "MMM d, yyyy")}
+                    </div>
+                    {!file.isFolder && (
+                      <div className="flex items-center gap-2 text-xs text-gray-400">
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                          file.type.includes('pdf') ? 'bg-red-500/20 text-red-400' :
+                          file.type.includes('png') ? 'bg-green-500/20 text-green-400' :
+                          file.type.includes('jpeg') || file.type.includes('jpg') ? 'bg-yellow-500/20 text-yellow-400' :
+                          file.type.includes('gif') ? 'bg-purple-500/20 text-purple-400' :
+                          file.type.includes('webp') ? 'bg-blue-500/20 text-blue-400' :
+                          'bg-white/10 text-white/70'
+                        }`}>
+                          {file.type.split('/')[1]?.toUpperCase() || 'FILE'}
+                        </span>
+                        {file.size && (
+                          <span>{formatFileSize(file.size)}</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Hover Actions */}
-                <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-2">
+                <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
                   {!file.isFolder && (
                     <button
-                      className="p-2 bg-white dark:bg-gray-800 rounded-full shadow hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                      className="p-2 bg-black/50 backdrop-blur-md rounded-full shadow-lg hover:bg-black/70 transition-colors border border-white/10"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleDownloadFile(file);
                       }}
                       title="Download"
+                      aria-label={`Download ${file.name}`}
                     >
-                      <Download className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+                      <Download className="w-4 h-4 text-white" />
                     </button>
                   )}
                   <button
-                    className="p-2 bg-white dark:bg-gray-800 rounded-full shadow hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    className="p-2 bg-black/50 backdrop-blur-md rounded-full shadow-lg hover:bg-black/70 transition-colors border border-white/10"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleShareFile(file);
                     }}
                     title="Share"
+                    aria-label={`Share ${file.name}`}
                   >
-                    <Share2 className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+                    <Share2 className="w-4 h-4 text-white" />
                   </button>
                 </div>
               </div>
