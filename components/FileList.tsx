@@ -26,11 +26,11 @@ interface FileListProps {
   onDeleteSuccess?: () => void;
 }
 
-export default function FileList({
-  userId,
-  refreshTrigger = 0,
-  onFolderChange,
-}: FileListProps) {
+  export default function FileList({
+    userId,
+    refreshTrigger = 0,
+    onFolderChange,
+  }: FileListProps) {
   const [files, setFiles] = useState<FileType[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("all");
@@ -708,19 +708,26 @@ export default function FileList({
 
       {/* Folder navigation */}
       {activeTab === "all" && (
-        <div className="mb-4">
-          <FolderNavigation
-            folderPath={folderPath}
-            navigateUp={navigateUp}
-            navigateToPathFolder={navigateToPathFolder}
-          />
-        </div>
+        <FolderNavigation
+          folderPath={folderPath}
+          navigateUp={navigateUp}
+          navigateToPathFolder={navigateToPathFolder}
+        />
       )}
 
       {/* Search and View Controls */}
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between mb-4">
+      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <Input
+            type="text"
+            placeholder="Search files..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 bg-[#1D1D1D] border-gray-700 text-white placeholder-gray-400"
+          />
+        </div>
         
-
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
@@ -764,13 +771,13 @@ export default function FileList({
             const thumbnailUrl = getThumbnailUrl(file);
             
             return (
-              <Card
-                key={file.id}
+        <Card
+                    key={file.id}
                 className={`group relative aspect-square rounded-2xl shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 overflow-hidden cursor-pointer ${
                   file.isFolder || file.type.startsWith("image/") ? "cursor-pointer" : ""
-                }`}
-                onClick={() => handleItemClick(file)}
-              >
+                      }`}
+                    onClick={() => handleItemClick(file)}
+                  >
                 {/* Background Image with Uniform Blur */}
                 <div className="absolute inset-0">
                   {thumbnailUrl ? (
@@ -782,7 +789,7 @@ export default function FileList({
                     />
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-gray-600 to-gray-800 flex items-center justify-center">
-                      <FileIcon file={file} />
+                        <FileIcon file={file} />
                     </div>
                   )}
                   {/* Uniform blur overlay for better text readability */}
@@ -801,7 +808,7 @@ export default function FileList({
                       }}
                       aria-label={`Open ${file.name}`}
                     >
-                      {file.name}
+                              {file.name}
                     </button>
                     <div className="text-xs text-gray-400">
                       {format(new Date(file.createdAt), "MMM d, yyyy")}
@@ -817,7 +824,7 @@ export default function FileList({
                           'bg-white/10 text-white/70'
                         }`}>
                           {file.type.split('/')[1]?.toUpperCase() || 'FILE'}
-                        </span>
+                            </span>
                         {file.size && (
                           <span>{formatFileSize(file.size)}</span>
                         )}
@@ -840,8 +847,8 @@ export default function FileList({
                       >
                         <ExternalLink className="w-4 h-4 text-white" />
                       </button>
-                    </Tooltip>
-                  )}
+                              </Tooltip>
+                            )}
                   <Tooltip content={file.isStarred ? "Remove from starred" : "Add to starred"}>
                     <button
                       className="p-2 bg-black/50 backdrop-blur-md rounded-full shadow-lg hover:bg-black/70 transition-colors border border-white/10"
@@ -868,7 +875,7 @@ export default function FileList({
                       <Trash className="w-4 h-4 text-white" />
                     </button>
                   </Tooltip>
-                </div>
+                          </div>
 
                 {/* Star indicator for starred files */}
                 {file.isStarred && (
@@ -878,8 +885,8 @@ export default function FileList({
                 )}
               </Card>
             );
-          })}
-        </div>
+                            })}
+                          </div>
       ) : (
         // List View
         <div className="space-y-2">
@@ -908,7 +915,7 @@ export default function FileList({
                     ) : (
                       <FileIcon file={file} />
                     )}
-                  </div>
+                        </div>
 
                   {/* File Info */}
                   <div className="flex-1 min-w-0">
@@ -919,7 +926,7 @@ export default function FileList({
                       {file.isStarred && (
                         <Star className="w-4 h-4 text-yellow-400 fill-current" />
                       )}
-                    </div>
+                      </div>
                     <div className="flex items-center gap-2 text-sm text-gray-400 mt-1">
                       <span>{formatDistanceToNow(new Date(file.createdAt), { addSuffix: true })}</span>
                       {!file.isFolder && (
@@ -939,8 +946,8 @@ export default function FileList({
                           </span>
                         </>
                       )}
-                    </div>
-                  </div>
+                      </div>
+                      </div>
 
                   {/* Actions */}
                   <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -985,8 +992,8 @@ export default function FileList({
                       </button>
                     </Tooltip>
                   </div>
-                </div>
-              </Card>
+          </div>
+        </Card>
             );
           })}
         </div>

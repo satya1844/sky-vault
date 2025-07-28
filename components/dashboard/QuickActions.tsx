@@ -1,5 +1,5 @@
 "use client";
-import { addToast } from "@heroui/toast";
+import {addToast} from "@heroui/toast";
 import { useState, useRef } from "react";
 import { Upload, FolderPlus, Sparkles, X, FileUp, AlertTriangle, ArrowRight } from "lucide-react";
 import { Button } from "@heroui/button";
@@ -22,10 +22,10 @@ interface QuickActionsProps {
   onUploadSuccess?: () => void;
 }
 
-export default function QuickActions({
-  userId,
-  currentFolder = null,
-  onUploadSuccess
+export default function QuickActions({ 
+  userId, 
+  currentFolder = null, 
+  onUploadSuccess 
 }: QuickActionsProps) {
   // Add this line to get the auth token
   const { getToken } = useAuth();
@@ -94,7 +94,7 @@ export default function QuickActions({
     try {
       // Get the authentication token from Clerk
       const token = await getToken();
-
+      
       if (!token) {
         setError("Authentication failed. Please try logging in again.");
         return;
@@ -102,7 +102,7 @@ export default function QuickActions({
 
       const formData = new FormData();
       formData.append("file", file);
-
+      
       if (currentFolder) {
         formData.append("parentId", currentFolder);
       }
@@ -142,7 +142,7 @@ export default function QuickActions({
       }
     } catch (error) {
       console.error("Error uploading file:", error);
-
+      
       // More specific error handling
       if (axios.isAxiosError(error)) {
         if (error.response?.status === 401) {
@@ -155,7 +155,7 @@ export default function QuickActions({
       } else {
         setError("Failed to upload file. Please try again.");
       }
-
+      
       addToast({
         title: "Upload Failed",
         description: "We couldn't upload your file. Please try again.",
@@ -179,7 +179,7 @@ export default function QuickActions({
     try {
       // Get the authentication token from Clerk
       const token = await getToken();
-
+      
       if (!token) {
         addToast({
           title: "Authentication Failed",
@@ -217,7 +217,7 @@ export default function QuickActions({
       }
     } catch (error) {
       console.error("Error creating folder:", error);
-
+      
       if (axios.isAxiosError(error) && error.response?.status === 401) {
         addToast({
           title: "Authentication Failed",
@@ -238,25 +238,25 @@ export default function QuickActions({
 
   return (
     <>
-      <div className=" px-4 grid mt-5 grid-cols-12 gap-4">
+      <div className="mt-3 px-4 grid mt-5 grid-cols-12 gap-4">
         {/* Upload File - 4 cols */}
-        <div
+        <div 
           className="col-span-4 bg-[#1D1D1D] rounded-[30px] h-16 flex items-center justify-center cursor-pointer hover:bg-[#252525] transition-colors"
           onClick={() => fileInputRef.current?.click()}
         >
           <span className="text-white text-sm font-medium">Upload File</span>
         </div>
-
+        
         {/* Create Folder - 4 cols */}
-        <div
+        <div 
           className="col-span-4 bg-[#1D1D1D] rounded-[30px] h-16 flex items-center justify-center cursor-pointer hover:bg-[#252525] transition-colors"
           onClick={() => setFolderModalOpen(true)}
         >
           <span className="text-white text-sm font-medium">New Folder</span>
         </div>
-
+        
         {/* AI Magic - 4 cols */}
-        <div
+        <div 
           className="col-span-4 bg-[#1D1D1D] rounded-[30px] h-16 flex items-center justify-center cursor-pointer hover:bg-[#252525] transition-colors"
           onClick={() => console.log("AI clicked")}
         >
@@ -274,37 +274,21 @@ export default function QuickActions({
       />
 
       {/* Upload Modal */}
-      
-      {/* Upload Modal */}
       <Modal
         isOpen={uploadModalOpen}
         onOpenChange={setUploadModalOpen}
         backdrop="blur"
         size="lg"
         classNames={{
-          base: "border border-gray-700 bg-black",
-          header: "border-b border-gray-700",
-          footer: "border-t border-gray-700",
+          base: "border border-border bg-black",
+          header: "border-b border-border",
+          footer: "border-t border-border",
         }}
       >
-        <ModalContent className="bg-[#020108] rounded-2xl border-[1px] border-gray-700 max-w-2xl">
-          <ModalHeader className="flex items-center justify-between">
-            <div className="flex items-center gap-2 ml-1.5">
-              <Upload className="h-5 w-5 text-white" />
-              <span className="text-white">Upload File</span>
-            </div>
-            <Button
-              isIconOnly
-              variant="light"
-              size="sm"
-              onClick={() => {
-                setUploadModalOpen(false);
-                clearFile();
-              }}
-              className="text-white hover:bg-gray-800 mr-2"
-            >
-              <X className="h-4 w-4" />
-            </Button>
+        <ModalContent>
+          <ModalHeader className="flex gap-2 items-center">
+            <Upload className="h-5 w-5 text-primary" />
+            <span className="text-foreground">Upload File</span>
           </ModalHeader>
           <ModalBody>
             <div
@@ -312,41 +296,41 @@ export default function QuickActions({
               onDragOver={handleDragOver}
               className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
                 error
-                  ? "border-red-500/30 bg-red-900/10"
+                  ? "border-danger/30 bg-danger/5"
                   : file
-                    ? "border-blue-500/30 bg-blue-900/10"
-                    : "border-gray-700 hover:border-gray-500"
+                    ? "border-primary/30 bg-primary/5"
+                    : "border-border hover:border-primary/50"
               }`}
             >
               {!file ? (
                 <div className="space-y-3">
-                  <FileUp className="h-12 w-12 mx-auto text-white/70" />
+                  <FileUp className="h-12 w-12 mx-auto text-primary/70" />
                   <div>
-                    <p className="text-white">
-                      Drag and drop your file here, or{" "}
+                    <p className="text-secondary-foreground">
+                      Drag and drop your image here, or{" "}
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="text-blue-400 cursor-pointer font-medium inline bg-transparent border-0 p-0 m-0"
+                        className="text-primary cursor-pointer font-medium inline bg-transparent border-0 p-0 m-0"
                       >
                         browse
                       </button>
                     </p>
-                    <p className="text-xs text-gray-400 mt-1">Files up to 5MB</p>
+                    <p className="text-xs text-secondary-foreground mt-1">Images up to 5MB</p>
                   </div>
                 </div>
               ) : (
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                      <div className="p-2 bg-blue-900/20 rounded-md">
-                        <FileUp className="h-5 w-5 text-blue-400" />
+                      <div className="p-2 bg-primary/10 rounded-md">
+                        <FileUp className="h-5 w-5 text-primary" />
                       </div>
                       <div className="text-left">
-                        <p className="text-sm font-medium truncate max-w-[180px] text-white">
+                        <p className="text-sm font-medium truncate max-w-[180px]">
                           {file.name}
                         </p>
-                        <p className="text-xs text-gray-400">
+                        <p className="text-xs text-secondary-foreground">
                           {file.size < 1024
                             ? `${file.size} B`
                             : file.size < 1024 * 1024
@@ -360,19 +344,19 @@ export default function QuickActions({
                       variant="light"
                       size="sm"
                       onClick={clearFile}
-                      className="text-white hover:bg-gray-800"
+                      className="text-secondary-foreground"
                     >
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
-      
+
                   {error && (
-                    <div className="bg-red-900/30 text-red-200 p-3 rounded-lg flex items-center gap-2">
+                    <div className="bg-red-900 text-red-200 p-3 rounded-lg flex items-center gap-2">
                       <AlertTriangle className="h-4 w-4" />
                       <span className="text-sm">{error}</span>
                     </div>
                   )}
-      
+
                   {uploading && (
                     <Progress
                       value={progress}
@@ -385,13 +369,13 @@ export default function QuickActions({
                 </div>
               )}
             </div>
-      
+
             {/* Upload tips */}
-            <div className="bg-gray-900 p-4 rounded-lg border border-gray-800 mt-4">
-              <h4 className="text-sm font-medium mb-2 text-white">Tips</h4>
-              <ul className="text-xs text-gray-400 space-y-1">
-                <li>• Files are private and only visible to you</li>
-                <li>• Supported formats: JPG, PNG, GIF, PDF, DOCX, TXT</li>
+            <div className="bg-card p-4 rounded-lg border border-border mt-4">
+              <h4 className="text-sm font-medium mb-2 text-foreground">Tips</h4>
+              <ul className="text-xs text-secondary-foreground space-y-1">
+                <li>• Images are private and only visible to you</li>
+                <li>• Supported formats: JPG, PNG, GIF, WebP</li>
                 <li>• Maximum file size: 5MB</li>
               </ul>
             </div>
@@ -404,28 +388,17 @@ export default function QuickActions({
                 setUploadModalOpen(false);
                 clearFile();
               }}
-              className="text-white cursor-pointer hover:bg-gray-700 rounded-2xl"
-              isDisabled={uploading}
             >
               Cancel
             </Button>
             <Button
-              color="default"
+              color="primary"
               onClick={handleUpload}
-              isDisabled={!file || !!error || uploading}
-              className="text-white cursor-pointer hover:bg-gray-700 rounded-2xl flex items-center gap-2"
+              isLoading={uploading}
+              isDisabled={!file || !!error}
+              endContent={!uploading && <ArrowRight className="h-4 w-4" />}
             >
-              {uploading ? (
-                <>
-                  <span className="loader animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white" />
-                  Uploading... {progress}%
-                </>
-              ) : (
-                <>
-                  Upload
-                  <ArrowRight className="h-4 w-4 text-white" />
-                </>
-              )}
+              {uploading ? `Uploading... ${progress}%` : "Upload Image"}
             </Button>
           </ModalFooter>
         </ModalContent>
@@ -442,14 +415,14 @@ export default function QuickActions({
           footer: "border-t border-border",
         }}
       >
-        <ModalContent className="bg-[#020108] rounded-2xl border-[1px] border-gray-700">
-          <ModalHeader className="  ml-1.5 mt-2 flex  gap-2 items-center">
-            <FolderPlus className="h-5 w-5 text-white " />
-            <span className="text-white">New Folder</span>
+        <ModalContent className="bg-[#262626] rounded-2xl border-[1px] border-gray-700">
+          <ModalHeader className="flex  gap-2 items-center">
+            <FolderPlus className="h-5 w-5 text-primary" />
+            <span className="text-foreground">New Folder</span>
           </ModalHeader>
           <ModalBody>
-            <div className="space-y-4">
-              <p className="text-sm text-white">
+            <div className="bg- space-y-4">
+              <p className="text-sm text-secondary-foreground">
                 Enter a name for your folder:
               </p>
               <Input
@@ -458,50 +431,28 @@ export default function QuickActions({
                 value={folderName}
                 onChange={(e) => setFolderName(e.target.value)}
                 autoFocus
-                className=" text-white placeholder:text-gray-400"
-                style={{
-                  backgroundColor: "#27272a", // darker background
-                  color: "white",            // white text
-                  borderColor: "#3f3f46",    // visible border
-                  borderRadius: "0.5rem",    // rounded corners
-                  padding: "0.75rem 1rem",   // comfortable padding
-                }}
+                className="bg-white text-white rounded-xl"
               />
             </div>
           </ModalBody>
-         <ModalFooter>
-  {/* Cancel Button */}
-  <Button
-    variant="flat"
-    color="default"
-    onClick={() => setFolderModalOpen(false)}
-    className="text-white cursor-pointer hover:bg-gray-700 rounded-2xl"
-    isDisabled={creatingFolder}
-  >
-    Cancel
-  </Button>
-
-  {/* Create Button */}
-  <Button
-    color="default"
-    onClick={handleCreateFolder}
-    isDisabled={!folderName.trim() || creatingFolder}
-    className="text-white cursor-pointer hover:bg-gray-700 rounded-2xl flex items-center gap-2"
-  >
-    {creatingFolder ? (
-      <>
-        <span className="loader animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white" />
-        Creating...
-      </>
-    ) : (
-      <>
-        Create
-        <ArrowRight className="h-4 w-4 text-white" />
-      </>
-    )}
-  </Button>
-</ModalFooter>
-
+          <ModalFooter>
+            <Button
+              variant="flat"
+              color="default"
+              onClick={() => setFolderModalOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              color="primary"
+              onClick={handleCreateFolder}
+              isLoading={creatingFolder}
+              isDisabled={!folderName.trim()}
+              endContent={!creatingFolder && <ArrowRight className="h-4 w-4" />}
+            >
+              Create
+            </Button>
+          </ModalFooter>
 
 
         </ModalContent>

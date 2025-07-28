@@ -142,3 +142,76 @@
     background-color: #4d4dff; /* darker primary */
   }
 }
+
+
+.grid-view {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 16px;
+}
+
+.list-view {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+@media (min-width: 640px) {
+  .grid-view {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+}
+
+@media (min-width: 768px) {
+  .grid-view {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .grid-view {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  }
+}
+
+
+/* Custom toast styles */
+.toast {
+  background-color: var(--card);
+  color: var(--card-foreground);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  border: 1px solid var(--border);
+}
+
+.toast.success {
+  background-color: #28a745; /* Green background for success toast */
+  color: #ffffff; /* White text for success toast */
+}
+
+.toast.error {
+  background-color: #dc3545; /* Red background for error toast */
+  color: #ffffff; /* White text for error toast */
+}
+
+.toast.warning {
+  background-color: #ffc107; /* Yellow background for warning toast */
+  color: #000000; /* Black text for warning toast */
+}
+
+.toast.info {
+  background-color: #17a2b8; /* Blue background for info toast */
+  color: #ffffff; /* White text for info toast */
+}
+
+.toast.custom {
+  background-color: #343a40; /* Dark background for custom toast */
+  color: #ffffff; /* White text for custom toast */
+}
+
+/* Custom toast width */
+.toast {
+  max-width: 400px;
+  width: fit-content;
+}

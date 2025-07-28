@@ -22,6 +22,7 @@
     "@heroui/input": "^2.4.19",
     "@heroui/modal": "^2.2.16",
     "@heroui/progress": "^2.2.15",
+    "@heroui/react": "^2.8.1",
     "@heroui/system": "^2.4.15",
     "@heroui/table": "^2.2.18",
     "@heroui/tabs": "^2.2.16",

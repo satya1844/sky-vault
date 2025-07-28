@@ -188,7 +188,7 @@ export default function Recents({ userId, limit = 20, refreshTrigger = 0 }: Rece
 
   return (
     <div className="p-6">
-     
+
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         {recentFiles.length === 0 ? (
@@ -237,12 +237,12 @@ export default function Recents({ userId, limit = 20, refreshTrigger = 0 }: Rece
                       }}
                       aria-label={`Open ${file.name}`}
                     >
-                      {file.name}
+                    {file.name}
                     </button>
                     <div className="text-xs text-gray-400">
-                      {format(new Date(file.createdAt), "MMM d, yyyy")}
+                    {format(new Date(file.createdAt), "MMM d, yyyy")}
                     </div>
-                    {!file.isFolder && (
+                  {!file.isFolder && (
                       <div className="flex items-center gap-2 text-xs text-gray-400">
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
                           file.type.includes('pdf') ? 'bg-red-500/20 text-red-400' :
@@ -258,7 +258,7 @@ export default function Recents({ userId, limit = 20, refreshTrigger = 0 }: Rece
                           <span>{formatFileSize(file.size)}</span>
                         )}
                       </div>
-                    )}
+                  )}
                   </div>
                 </div>
 

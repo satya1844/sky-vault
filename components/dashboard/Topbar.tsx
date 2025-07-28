@@ -22,7 +22,7 @@ export default function Topbar({ user }: TopbarProps) {
       <div className="col-span-3 bg-[#1D1D1D] rounded-[35px] h-12"></div>
       
       {/* Small profile circle - 1 col */}
-      <div className="col-span-1 bg-[#1D1D1D] rounded-full h-12 w-12 flex items-center justify-center text-white font-medium">
+      <a href="/dashboard/profile" className="col-span-1 bg-[#1D1D1D] rounded-full h-12 w-12 flex items-center justify-center text-white font-medium">
         {user?.imageUrl ? (
           <img
             src={user.imageUrl}
@@ -32,7 +32,7 @@ export default function Topbar({ user }: TopbarProps) {
         ) : (
           getInitial()
         )}
-      </div>
+      </a>
     </div>
   );
 }
