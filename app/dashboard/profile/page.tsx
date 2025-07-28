@@ -1,5 +1,6 @@
-"use client";
+'use client';
 
+import { Mail, User, LogOut, Shield, ArrowRight, Calendar, Settings, Edit } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useUser, useClerk } from "@clerk/nextjs";
 import { Button } from "@heroui/button";
@@ -9,7 +10,6 @@ import { Avatar } from "@heroui/avatar";
 import { Divider } from "@heroui/divider";
 import Badge from "@/components/ui/Badge";
 import { useRouter } from "next/navigation";
-import { Mail, User, LogOut, Shield, ArrowRight, Calendar, Settings, Edit } from "lucide-react";
 import axios from "axios";
 
 interface UserStats {
