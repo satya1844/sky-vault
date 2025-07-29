@@ -34,7 +34,7 @@ export default function FileList({
   onFolderChange,
   externalRefreshTrigger = 0,
 }: FileListProps) {
-  
+
   const [files, setFiles] = useState<FileType[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("all");
@@ -730,12 +730,12 @@ export default function FileList({
       <div className="border-b border-gray-200 bg-background sticky top-0 z-10">
         <div className="px-6 py-4">
           {/* Tabs for filtering files */}
-          <div className="flex space-x-1 bg-[#d8d8d8] rounded-lg p-1 w-fit">
+          <div className="flex space-x-1 dark:bg-[#1D1D1D] rounded-lg p-1 w-fit">
             <button
               onClick={() => setActiveTab("all")}
               className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === "all"
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-600 hover:text-gray-900"
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-100 hover:text-gray-400"
                 }`}
             >
               All files
@@ -743,8 +743,8 @@ export default function FileList({
             <button
               onClick={() => setActiveTab("starred")}
               className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === "starred"
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-600 hover:text-gray-900"
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-100 hover:text-gray-400"
                 }`}
             >
               Starred ({starredCount})
@@ -752,8 +752,8 @@ export default function FileList({
             <button
               onClick={() => setActiveTab("trash")}
               className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === "trash"
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-600 hover:text-gray-900"
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-100 hover:text-gray-400"
                 }`}
             >
               Trash ({trashCount})
@@ -822,12 +822,11 @@ export default function FileList({
               return (
                 <Card
                   key={file.id}
-                  className="group relative bg-white rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden"
+                  className="group relative aspect-square rounded-2xl border border-white/10 shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 overflow-hidden cursor-pointer"
                   onClick={() => handleItemClick(file)}
                 >
-
-                  {/* Thumbnail/Preview */}
-                  <div className="aspect-square bg-gray-50 flex items-center justify-center relative overflow-hidden pointer-events-none">
+                  {/* Background image or icon */}
+                  <div className="absolute inset-0">
                     {thumbnailUrl ? (
                       <Image
                         src={thumbnailUrl}
@@ -836,99 +835,109 @@ export default function FileList({
                         className="object-cover"
                       />
                     ) : (
-                      <div className="w-full h-full bg-gray-50 flex items-center justify-center">
+                      <div className="w-full h-full bg-gradient-to-br from-gray-600 to-gray-800 flex items-center justify-center">
                         {file.isFolder ? (
                           <Folder className="w-12 h-12 text-blue-500" />
                         ) : (
-                          <FileIcon file={file} />
+                          <FileIcon file={file.id} />
                         )}
                       </div>
                     )}
 
-                    {/* Hover Actions Overlay */}
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-200 pointer-events-none">
-                      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 pointer-events-auto">
-                        {!file.isFolder && (
-                          <Tooltip content="Download">
-                            <button
-                              className="p-1.5 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDownloadFile(file);
-                              }}
-                            >
-                              <ExternalLink className="w-3.5 h-3.5 text-gray-600" />
-                            </button>
-                          </Tooltip>
-                        )}
-                        <Tooltip content={file.isStarred ? "Remove from starred" : "Add to starred"}>
-                          <button
-                            className="p-1.5 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleStarFile(file.id);
-                            }}
-                          >
-                            <Star
-                              className={`w-3.5 h-3.5 ${file.isStarred ? 'text-yellow-500 fill-current' : 'text-gray-600'}`}
-                            />
-                          </button>
-                        </Tooltip>
-                        <Tooltip content={file.isTrashed ? "Restore" : "Move to trash"}>
-                          <button
-                            className="p-1.5 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleTrashFile(file.id);
-                            }}
-                          >
-                            <Trash className="w-3.5 h-3.5 text-gray-600" />
-                          </button>
-                        </Tooltip>
-                        {/* Permanent Delete Button for Trash Tab */}
-                        {activeTab === "trash" && (
-                          <Tooltip content="Delete permanently">
-                            <button
-                              className="p-1.5 bg-white rounded-full shadow-md hover:bg-red-50 transition-colors"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedFile(file);
-                                setDeleteModalOpen(true);
-                              }}
-                            >
-                              <X className="w-3.5 h-3.5 text-red-600" />
-                            </button>
-                          </Tooltip>
-                        )}
-                      </div>
-                    </div>
+                    {/* Uniform blur overlay */}
+                    <div className="absolute inset-0 bg-black/15 backdrop-blur-[0.5px] group-hover:bg-black/5 group-hover:backdrop-blur-[0.25px] transition-all duration-300"></div>
+                  </div>
 
-                    {/* Star indicator for starred files */}
-                    {file.isStarred && (
-                      <div className="absolute top-2 left-2">
-                        <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                      </div>
+                  {/* Hover actions */}
+                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 pointer-events-auto z-10">
+                    {!file.isFolder && (
+                      <Tooltip content="Download">
+                        <button
+                          className="p-1.5 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDownloadFile(file);
+                          }}
+                        >
+                          <ExternalLink className="w-3.5 h-3.5 text-gray-600" />
+                        </button>
+                      </Tooltip>
+                    )}
+                    <Tooltip content={file.isStarred ? "Remove from starred" : "Add to starred"}>
+                      <button
+                        className="p-1.5 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleStarFile(file.id);
+                        }}
+                      >
+                        <Star
+                          className={`w-3.5 h-3.5 ${file.isStarred ? 'text-yellow-500 fill-current' : 'text-gray-600'}`}
+                        />
+                      </button>
+                    </Tooltip>
+                    <Tooltip content={file.isTrashed ? "Restore" : "Move to trash"}>
+                      <button
+                        className="p-1.5 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleTrashFile(file.id);
+                        }}
+                      >
+                        <Trash className="w-3.5 h-3.5 text-gray-600" />
+                      </button>
+                    </Tooltip>
+                    {activeTab === "trash" && (
+                      <Tooltip content="Delete permanently">
+                        <button
+                          className="p-1.5 bg-white rounded-full shadow-md hover:bg-red-50 transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedFile(file);
+                            setDeleteModalOpen(true);
+                          }}
+                        >
+                          <X className="w-3.5 h-3.5 text-red-600" />
+                        </button>
+                      </Tooltip>
                     )}
                   </div>
 
-                  {/* File Info */}
-                  <div className="p-3">
+                  {/* Star icon on top left */}
+                  {file.isStarred && (
+                    <div className="absolute top-2 left-2 z-10">
+                      <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                    </div>
+                  )}
+
+                  {/* Bottom Meta Info Card */}
+                  <div className="absolute bottom-0 left-0 right-0 p-3 bg-[#1d1d1d] bg-opacity-95 text-white space-y-1 z-10">
                     <h3
-                      className="font-medium text-sm text-gray-900 truncate mb-1"
+                      className="font-medium text-sm truncate"
                       title={file.name}
                     >
                       {file.name}
                     </h3>
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs text-gray-400">
                       {format(new Date(file.createdAt), "MMM d, yyyy")}
                     </div>
-                    {!file.isFolder && file.size && (
-                      <div className="text-xs text-gray-500 mt-1">
-                        {formatFileSize(file.size)}
+                    {/* {!file.isFolder && file.size && (
+                      <div className="flex items-center gap-2 text-xs text-gray-400">
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${file.type.includes('pdf') ? 'bg-red-500/20 text-red-400' :
+                            file.type.includes('png') ? 'bg-green-500/20 text-green-400' :
+                              file.type.includes('jpeg') || file.type.includes('jpg') ? 'bg-yellow-500/20 text-yellow-400' :
+                                file.type.includes('gif') ? 'bg-purple-500/20 text-purple-400' :
+                                  file.type.includes('webp') ? 'bg-blue-500/20 text-blue-400' :
+                                    'bg-white/10 text-white/70'
+                          }`}>
+                          {file.type.split('/')[1]?.toUpperCase() || 'FILE'}
+                        </span>
+                        <span>{formatFileSize(file.size)}</span>
                       </div>
-                    )}
+                    )} */}
                   </div>
                 </Card>
+
               );
             })}
           </div>

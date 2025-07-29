@@ -85,6 +85,13 @@ const DashboardContent: React.FC<DashboardProps> = ({ user }) => {
         onActionComplete={handleActionComplete}
       />
 
+      {/* Recent Files */}
+      <Recents
+        userId={user.id}
+        limit={5}
+
+      />
+
       {/* Main File List View */}
       <FileList
         userId={user.id}
@@ -92,13 +99,7 @@ const DashboardContent: React.FC<DashboardProps> = ({ user }) => {
         onFolderChange={handleFolderChange}
       />
 
-      {/* Manual Refresh Button (for dev/debug) */}
-      <button
-        onClick={() => setFileListRefreshTrigger(prev => prev + 1)}
-        className="fixed bottom-4 right-4 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg"
-      >
-        Refresh
-      </button>
+      
     </div>
   );
 };

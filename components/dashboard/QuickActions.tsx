@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Upload, FolderPlus, Plus } from "lucide-react";
+import { Upload, FolderPlus, Plus, Sparkles } from "lucide-react";
 import { Button } from "@heroui/button";
 import { addToast } from "@heroui/toast";
 import axios from "axios";
@@ -10,7 +10,7 @@ interface QuickActionsProps {
   userId: string;
   currentFolderId: string | null;
   currentFolderPath: Array<{ id: string; name: string }>;
-  onActionComplete: () => void; // Callback to refresh the file list
+  onActionComplete: () => void;
 }
 
 // Common toast styles
@@ -95,7 +95,6 @@ export default function QuickActions({
         formData.append('file', file);
         formData.append('userId', userId);
 
-        // Add current folder as parent if we're inside a folder
         if (currentFolderId) {
           formData.append('parentId', currentFolderId);
           console.log('Uploading to folder:', currentFolderId);
@@ -116,7 +115,6 @@ export default function QuickActions({
         console.log('Upload response:', response.data);
       }
 
-      // Build the location description
       let locationDescription = '';
       if (currentFolderId && currentFolderPath.length > 0) {
         const folderNames = currentFolderPath.map(folder => folder.name).join(' > ');
@@ -132,7 +130,6 @@ export default function QuickActions({
         classNames: toastClassNames
       });
 
-      // Notify parent to refresh the file list
       onActionComplete();
     } catch (error) {
       console.error('Upload error:', error);
@@ -146,11 +143,25 @@ export default function QuickActions({
     } finally {
       setIsUploading(false);
       setUploadProgress(0);
-      // Reset the file input
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
     }
+  };
+
+  // Handle drag and drop
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const event = {
+        target: { files: e.dataTransfer.files }
+      } as React.ChangeEvent<HTMLInputElement>;
+      handleFileUpload(event);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
   };
 
   // Create new folder
@@ -165,7 +176,6 @@ export default function QuickActions({
         parentId: currentFolderId,
       });
 
-      // Build the location description
       let locationDescription = '';
       if (currentFolderId && currentFolderPath.length > 0) {
         const folderNames = currentFolderPath.map(folder => folder.name).join(' > ');
@@ -181,7 +191,6 @@ export default function QuickActions({
         classNames: toastClassNames
       });
 
-      // Notify parent to refresh the file list
       onActionComplete();
     } catch (error) {
       console.error('Create folder error:', error);
@@ -196,7 +205,7 @@ export default function QuickActions({
   };
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
+    <div className="p-6">
       {/* Hidden file input */}
       <input
         ref={fileInputRef}
@@ -207,68 +216,87 @@ export default function QuickActions({
         accept="*/*"
       />
 
-      <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
-      
       {/* Show current location */}
-      {currentFolderId && currentFolderPath.length > 0 && (
-        <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+      {/* {currentFolderId && currentFolderPath.length > 0 && (
+        <div className="mb-6 p-3 bg-blue-50 rounded-lg border border-blue-200">
           <p className="text-sm text-blue-800">
             <span className="font-medium">Current location:</span>{' '}
             {currentFolderPath.map(folder => folder.name).join(' > ')}
           </p>
         </div>
-      )}
+      )} */}
 
-      <div className="space-y-3">
-        <Button
-          color="primary"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={isUploading}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg justify-start"
-          size="lg"
+      {/* Modern Action Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {/* Upload Card */}
+        <div
+          className={`group relative dark:bg-[#1D1D1D] rounded-2xl border dark:border-white/10  p-6 cursor-pointer transition-all duration-200 hover:border-gray-300 hover:shadow-lg ${
+            isUploading ? 'pointer-events-none opacity-60' : ''
+          }`}
+          onClick={() => !isUploading && fileInputRef.current?.click()}
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
         >
-          <Upload className="w-5 h-5 mr-3" />
-          {isUploading ? `Uploading... ${Math.round(uploadProgress)}%` : 'Upload Files'}
-        </Button>
-
-        <Button
-          variant="bordered"
-          onClick={handleCreateFolder}
-          className="w-full border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg justify-start"
-          size="lg"
-        >
-          <FolderPlus className="w-5 h-5 mr-3" />
-          Create New Folder
-        </Button>
-
-        {/* You can add more quick actions here */}
-        {/* 
-        <Button
-          variant="bordered"
-          className="w-full border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg justify-start"
-          size="lg"
-        >
-          <Plus className="w-5 h-5 mr-3" />
-          Other Action
-        </Button>
-        */}
-      </div>
-
-      {/* Show upload progress if uploading */}
-      {isUploading && (
-        <div className="mt-4">
-          <div className="flex justify-between text-sm text-gray-600 mb-1">
-            <span>Uploading...</span>
-            <span>{Math.round(uploadProgress)}%</span>
+          <div className="flex flex-col items-center text-center space-y-3">
+            <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center group-hover:bg-blue-50 transition-colors">
+              <Upload className="w-6 h-6 text-gray-600 group-hover:text-blue-600 transition-colors" />
+            </div>
+            <div>
+              <h3 className="font-medium dark:text-gray-200 mb-1">
+                {isUploading ? 'Uploading...' : 'Upload or drop'}
+              </h3>
+              <p className="text-sm text-gray-500">
+                {isUploading ? `${Math.round(uploadProgress)}%` : 'Add files to this folder'}
+              </p>
+            </div>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div
-              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${uploadProgress}%` }}
-            ></div>
+          
+          {/* Upload Progress */}
+          {isUploading && (
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-200 rounded-b-2xl overflow-hidden">
+              <div
+                className="h-full bg-blue-600 transition-all duration-300"
+                style={{ width: `${uploadProgress}%` }}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Create Folder Card */}
+        <div
+          className="group dark:bg-[#1D1D1D] rounded-2xl border dark:border-white/10 p-6 cursor-pointer transition-all duration-200 hover:border-gray-300 hover:shadow-lg"
+          onClick={handleCreateFolder}
+        >
+          <div className="flex flex-col items-center text-center space-y-3">
+            <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center group-hover:bg-yellow-50 transition-colors">
+              <FolderPlus className="w-6 h-6 text-gray-600 group-hover:text-yellow-600 transition-colors" />
+            </div>
+            <div>
+              <h3 className="font-medium dark:text-gray-200 mb-1">Create folder</h3>
+              <p className="text-sm dark:text-gray-400">Organize your files</p>
+            </div>
           </div>
         </div>
-      )}
+
+        {/* AI Magic Card (placeholder) */}
+        <div
+          className="group dark:bg-[#1D1D1D] rounded-2xl border dark:border-white/10  p-6 cursor-pointer transition-all duration-200 hover:border-gray-300 hover:shadow-lg"
+          onClick={() => console.log('AI features coming soon!')}
+        >
+          <div className="flex flex-col items-center text-center space-y-3">
+            <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center group-hover:bg-purple-50 transition-colors">
+              <Sparkles className="w-6 h-6 text-gray-600 group-hover:text-purple-600 transition-colors" />
+            </div>
+            <div>
+              <h3 className="font-medium dark:text-gray-200 mb-1">AI Magic</h3>
+              <p className="text-sm dark:text-gray-400">Smart file actions</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Alternative: Horizontal Layout (uncomment to use instead) */}
+     
     </div>
   );
 }
