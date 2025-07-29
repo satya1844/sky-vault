@@ -64,7 +64,7 @@ export default function Favorites({ userId }: FavoritesProps) {
   return (
     <FileList
       userId={userId}
-      files={files}
+      
       refreshTrigger={0} // You can use this to trigger a refresh if needed
     />
   );

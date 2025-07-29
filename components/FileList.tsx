@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
-import { Folder, Star, Trash, X, ExternalLink, StarIcon, EyeClosed, Search, Filter, Grid, List } from "lucide-react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
+import { Folder, Star, Trash, X, ExternalLink, StarIcon, EyeClosed, Filter, Grid, List, Upload, Plus, FolderPlus } from "lucide-react";
 import { Card } from "@heroui/card";
 import { Input } from "@heroui/input";
 import { Button } from "@heroui/button";
 import { Tooltip } from "@heroui/tooltip";
 import { addToast } from "@heroui/toast";
 import Image from "next/image";
+import React from "react";
 
 import { formatDistanceToNow, format } from "date-fns";
 import type { File as FileType } from "@/lib/db/schema";
@@ -19,6 +20,7 @@ import FileLoadingState from "@/components/FileLoadingState";
 import FileTabs from "@/components/FileTabs";
 import FolderNavigation from "@/components/FolderNavigation";
 
+
 interface FileListProps {
   userId: string;
   refreshTrigger?: number;
@@ -26,25 +28,28 @@ interface FileListProps {
   onDeleteSuccess?: () => void;
 }
 
-  export default function FileList({
-    userId,
-    refreshTrigger = 0,
-    onFolderChange,
-  }: FileListProps) {
+export default function FileList({
+  userId,
+  refreshTrigger = 0,
+  onFolderChange,
+}: FileListProps) {
   const [files, setFiles] = useState<FileType[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("all");
   const [currentFolder, setCurrentFolder] = useState<string | null>(null);
-  const [folderPath, setFolderPath] = useState<
-    Array<{ id: string; name: string }>
-  >([]);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [folderPath, setFolderPath] = useState<Array<{ id: string; name: string }>>([]);
+
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   // Modal states
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [emptyTrashModalOpen, setEmptyTrashModalOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<FileType | null>(null);
+
+  // Upload states
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch files
   const fetchFiles = useCallback(async () => {
@@ -55,36 +60,19 @@ interface FileListProps {
         url += `&parentId=${currentFolder}`;
       }
 
+      console.log('Fetching files from:', url, 'Current folder:', currentFolder);
+
       const response = await axios.get(url);
+      console.log('Files response:', response.data);
       setFiles(response.data);
     } catch (error) {
       console.error("Error fetching files:", error);
+      const errorMessage = error instanceof Error ? error.message : "We couldn't load your files";
       addToast({
         title: "Error Loading Files",
-        description: "We couldn't load your files. Please try again later.",
+        description: `${errorMessage}. Please try again later.`,
         color: "danger",
-        classNames: {
-    base: `
-      custom-toast-width
-      bg-zinc-900
-      text-white
-      px-4
-      py-3
-      border
-      border-zinc-700
-      shadow-xl
-      flex
-      items-start
-      gap-3
-    `,
-    closeButton: `
-      hover:bg-white/10
-      transition
-      p-1
-      rounded
-      ml-auto
-    `,
-  },
+        classNames: toastClassNames
       });
     } finally {
       setLoading(false);
@@ -94,7 +82,161 @@ interface FileListProps {
   // Fetch files when userId, refreshTrigger, or currentFolder changes
   useEffect(() => {
     fetchFiles();
-  }, [userId, refreshTrigger, currentFolder, fetchFiles]);
+  }, [fetchFiles]);
+
+  // Handle file upload
+  // Common toast styles
+const toastClassNames = {
+  base: `
+    custom-toast-width
+    bg-zinc-900
+    text-white
+    px-4
+    py-3
+    border
+    border-zinc-700
+    shadow-xl
+    flex
+    items-start
+    gap-3
+  `,
+  closeButton: `
+    hover:bg-white/10
+    transition
+    p-1
+    rounded
+    ml-auto
+  `,
+};
+
+const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = event.target.files;
+    if (!selectedFiles || selectedFiles.length === 0) return;
+
+    // Validate file types and sizes
+    const maxFileSize = 50 * 1024 * 1024; // 50MB limit
+    const allowedTypes = [
+      'image/jpeg',
+      'image/png',
+      'image/gif',
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/plain'
+    ];
+
+    for (const file of selectedFiles) {
+      if (!allowedTypes.includes(file.type)) {
+        addToast({
+          title: "Invalid File Type",
+          description: `${file.name} is not a supported file type. Please upload only images, PDFs, Word documents, or text files.`,
+          color: "danger",
+          classNames: toastClassNames
+        });
+        return;
+      }
+      if (file.size > maxFileSize) {
+        addToast({
+          title: "File Too Large",
+          description: `${file.name} exceeds the 50MB size limit.`,
+          color: "danger",
+          classNames: toastClassNames
+        });
+        return;
+      }
+    }
+
+    setIsUploading(true);
+    setUploadProgress(0);
+
+    try {
+      for (let i = 0; i < selectedFiles.length; i++) {
+        const file = selectedFiles[i];
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('userId', userId);
+
+        // Add current folder as parent if we're inside a folder
+        if (currentFolder) {
+          formData.append('parentId', currentFolder);
+          console.log('Uploading to folder:', currentFolder);
+        }
+
+        const response = await axios.post('/api/files/upload', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+          onUploadProgress: (progressEvent) => {
+            const progress = Math.round(
+              ((progressEvent.loaded || 0) * 100) / (progressEvent.total || 1)
+            );
+            setUploadProgress((i / selectedFiles.length) * 100 + (progress / selectedFiles.length));
+          },
+        });
+
+        console.log('Upload response:', response.data);
+      }
+
+      addToast({
+        title: "Upload Successful",
+        description: `${selectedFiles.length} file(s) uploaded successfully ${currentFolder ? 'to current folder' : ''}`,
+        color: "success",
+        classNames: toastClassNames
+      });
+
+      // Refresh the file list
+      await fetchFiles();
+    } catch (error) {
+      console.error('Upload error:', error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to upload files";
+      addToast({
+        title: "Upload Failed",
+        description: `${errorMessage}. Please try again.`,
+        color: "danger",
+        classNames: toastClassNames
+      });
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
+      // Reset the file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  // Create new folder
+  const handleCreateFolder = async () => {
+    const folderName = prompt('Enter folder name:');
+    if (!folderName?.trim()) return;
+
+    try {
+      const response = await axios.post('/api/folders/create', {
+        name: folderName.trim(),
+        userId,
+        parentId: currentFolder,
+      });
+
+      addToast({
+        title: "Folder Created",
+        description: `Folder "${folderName}" created successfully`,
+        color: "success",
+        classNames: toastClassNames
+      });
+
+      // Refresh the file list
+      await fetchFiles();
+    } catch (error) {
+      console.error('Create folder error:', error);
+      const errorMessage = error instanceof Error ? error.message : "Could not create the folder";
+      addToast({
+        title: "Failed to Create Folder",
+        description: `${errorMessage}. Please try again.`,
+        color: "danger",
+        classNames: toastClassNames
+      });
+    }
+  };
 
   // Filter files based on active tab and search query
   const filteredFiles = useMemo(() => {
@@ -114,15 +256,10 @@ interface FileListProps {
         break;
     }
 
-    // Filter by search query
-    if (searchQuery.trim()) {
-      filtered = filtered.filter((file) =>
-        file.name.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
+
 
     return filtered;
-  }, [files, activeTab, searchQuery]);
+  }, [files, activeTab]);
 
   // Count files in trash
   const trashCount = useMemo(() => {
@@ -150,6 +287,73 @@ interface FileListProps {
     return undefined;
   };
 
+  // Navigate to a folder
+  const navigateToFolder = useCallback((folderId: string, folderName: string) => {
+    console.log('Navigating to folder:', folderId, folderName);
+    setCurrentFolder(folderId);
+    setFolderPath(prev => [...prev, { id: folderId, name: folderName }]);
+
+    // Notify parent component about folder change
+    if (onFolderChange) {
+      onFolderChange(folderId);
+    }
+  }, [onFolderChange]);
+
+  // Navigate back to parent folder (from FolderNavigation component)
+  const navigateUp = useCallback(() => {
+    if (folderPath.length > 0) {
+      const newPath = [...folderPath];
+      newPath.pop();
+      setFolderPath(newPath);
+      const newFolderId = newPath.length > 0 ? newPath[newPath.length - 1].id : null;
+      setCurrentFolder(newFolderId);
+
+      console.log('Navigating up to:', newFolderId);
+
+      // Notify parent component about folder change
+      if (onFolderChange) {
+        onFolderChange(newFolderId);
+      }
+    }
+  }, [folderPath, onFolderChange]);
+
+  // Navigate to specific folder in path (from FolderNavigation component)
+  const navigateToPathFolder = useCallback((index: number) => {
+    if (index < 0) {
+      // Navigate to root
+      setCurrentFolder(null);
+      setFolderPath([]);
+      console.log('Navigating to root');
+
+      // Notify parent component about folder change
+      if (onFolderChange) {
+        onFolderChange(null);
+      }
+    } else {
+      const newPath = folderPath.slice(0, index + 1);
+      setFolderPath(newPath);
+      const newFolderId = newPath[newPath.length - 1].id;
+      setCurrentFolder(newFolderId);
+
+      console.log('Navigating to path folder:', newFolderId);
+
+      // Notify parent component about folder change
+      if (onFolderChange) {
+        onFolderChange(newFolderId);
+      }
+    }
+  }, [folderPath, onFolderChange]);
+
+  // Handle file or folder click
+  const handleItemClick = (file: FileType) => {
+    if (file.isFolder) {
+      // Navigate to the clicked folder
+      navigateToFolder(file.id, file.name);
+    } else if (file.type.startsWith("image/")) {
+      openImageViewer(file);
+    }
+  };
+
   const handleStarFile = async (fileId: string) => {
     try {
       await axios.patch(`/api/files/${fileId}/star`);
@@ -164,42 +368,42 @@ interface FileListProps {
       // Show toast
       const file = files.find((f) => f.id === fileId);
       addToast({
-  title: file?.isStarred ? "Removed from Starred" : "Added to Starred",
-  description: `"${file?.name}" has been ${file?.isStarred ? "removed from" : "added to"} your starred files.`,
-  color: file?.isStarred ? "warning" : "success",
-  variant: "bordered",
-  radius: "lg",
-  timeout: 5000,
-  shouldShowTimeoutProgress: true,
-  icon: file?.isStarred ? (
-    <StarIcon className="w-5 h-5 text-yellow-400" />
-  ) : (
-    <StarIcon className="w-5 h-5 text-green-400" />
-  ),
-  closeIcon: <EyeClosed className="w-4 h-4 text-gray-300 hover:text-white transition" />,
-  classNames: {
-    base: `
-      custom-toast-width
-      bg-zinc-900
-      text-white
-      px-4
-      py-3
-      border
-      border-zinc-700
-      shadow-xl
-      flex
-      items-start
-      gap-3
-    `,
-    closeButton: `
-      hover:bg-white/10
-      transition
-      p-1
-      rounded
-      ml-auto
-    `,
-  },
-});
+        title: file?.isStarred ? "Removed from Starred" : "Added to Starred",
+        description: `"${file?.name}" has been ${file?.isStarred ? "removed from" : "added to"} your starred files.`,
+        color: file?.isStarred ? "warning" : "success",
+        variant: "bordered",
+        radius: "lg",
+        timeout: 5000,
+        shouldShowTimeoutProgress: true,
+        icon: file?.isStarred ? (
+          <StarIcon className="w-5 h-5 text-yellow-400" />
+        ) : (
+          <StarIcon className="w-5 h-5 text-green-400" />
+        ),
+        closeIcon: <EyeClosed className="w-4 h-4 text-gray-300 hover:text-white transition" />,
+        classNames: {
+          base: `
+            custom-toast-width
+            bg-zinc-900
+            text-white
+            px-4
+            py-3
+            border
+            border-zinc-700
+            shadow-xl
+            flex
+            items-start
+            gap-3
+          `,
+          closeButton: `
+            hover:bg-white/10
+            transition
+            p-1
+            rounded
+            ml-auto
+          `,
+        },
+      });
     } catch (error) {
       console.error("Error starring file:", error);
       addToast({
@@ -207,27 +411,27 @@ interface FileListProps {
         description: "We couldn't update the star status. Please try again.",
         color: "danger",
         classNames: {
-    base: `
-      custom-toast-width
-      bg-zinc-900
-      text-white
-      px-4
-      py-3
-      border
-      border-zinc-700
-      shadow-xl
-      flex
-      items-start
-      gap-3
-    `,
-    closeButton: `
-      hover:bg-white/10
-      transition
-      p-1
-      rounded
-      ml-auto
-    `,
-  },
+          base: `
+            custom-toast-width
+            bg-zinc-900
+            text-white
+            px-4
+            py-3
+            border
+            border-zinc-700
+            shadow-xl
+            flex
+            items-start
+            gap-3
+          `,
+          closeButton: `
+            hover:bg-white/10
+            transition
+            p-1
+            rounded
+            ml-auto
+          `,
+        },
       });
     }
   };
@@ -251,27 +455,27 @@ interface FileListProps {
         description: `"${file?.name}" has been ${responseData.isTrashed ? "moved to trash" : "restored"}`,
         color: "success",
         classNames: {
-    base: `
-      custom-toast-width
-      bg-zinc-900
-      text-white
-      px-4
-      py-3
-      border
-      border-zinc-700
-      shadow-xl
-      flex
-      items-start
-      gap-3
-    `,
-    closeButton: `
-      hover:bg-white/10
-      transition
-      p-1
-      rounded
-      ml-auto
-    `,
-  },
+          base: `
+            custom-toast-width
+            bg-zinc-900
+            text-white
+            px-4
+            py-3
+            border
+            border-zinc-700
+            shadow-xl
+            flex
+            items-start
+            gap-3
+          `,
+          closeButton: `
+            hover:bg-white/10
+            transition
+            p-1
+            rounded
+            ml-auto
+          `,
+        },
       });
     } catch (error) {
       console.error("Error trashing file:", error);
@@ -280,27 +484,27 @@ interface FileListProps {
         description: "We couldn't update the file status. Please try again.",
         color: "danger",
         classNames: {
-    base: `
-      custom-toast-width
-      bg-zinc-900
-      text-white
-      px-4
-      py-3
-      border
-      border-zinc-700
-      shadow-xl
-      flex
-      items-start
-      gap-3
-    `,
-    closeButton: `
-      hover:bg-white/10
-      transition
-      p-1
-      rounded
-      ml-auto
-    `,
-  },
+          base: `
+            custom-toast-width
+            bg-zinc-900
+            text-white
+            px-4
+            py-3
+            border
+            border-zinc-700
+            shadow-xl
+            flex
+            items-start
+            gap-3
+          `,
+          closeButton: `
+            hover:bg-white/10
+            transition
+            p-1
+            rounded
+            ml-auto
+          `,
+        },
       });
     }
   };
@@ -318,30 +522,31 @@ interface FileListProps {
           description: `"${fileName}" has been permanently removed`,
           color: "success",
           classNames: {
-    base: `
-      custom-toast-width
-      bg-zinc-900
-      text-white
-      px-4
-      py-3
-      border
-      border-zinc-700
-      shadow-xl
-      flex
-      items-start
-      gap-3
-    `,
-    closeButton: `
-      hover:bg-white/10
-      transition
-      p-1
-      rounded
-      ml-auto
-    `,
-  },
+            base: `
+              custom-toast-width
+              bg-zinc-900
+              text-white
+              px-4
+              py-3
+              border
+              border-zinc-700
+              shadow-xl
+              flex
+              items-start
+              gap-3
+            `,
+            closeButton: `
+              hover:bg-white/10
+              transition
+              p-1
+              rounded
+              ml-auto
+            `,
+          },
         });
 
         setDeleteModalOpen(false);
+        await fetchFiles(); // Refresh the list
       } else {
         throw new Error(response.data.error || "Failed to delete file");
       }
@@ -352,27 +557,27 @@ interface FileListProps {
         description: "We couldn't delete the file. Please try again later.",
         color: "danger",
         classNames: {
-    base: `
-      custom-toast-width
-      bg-zinc-900
-      text-white
-      px-4
-      py-3
-      border
-      border-zinc-700
-      shadow-xl
-      flex
-      items-start
-      gap-3
-    `,
-    closeButton: `
-      hover:bg-white/10
-      transition
-      p-1
-      rounded
-      ml-auto
-    `,
-  },
+          base: `
+            custom-toast-width
+            bg-zinc-900
+            text-white
+            px-4
+            py-3
+            border
+            border-zinc-700
+            shadow-xl
+            flex
+            items-start
+            gap-3
+          `,
+          closeButton: `
+            hover:bg-white/10
+            transition
+            p-1
+            rounded
+            ml-auto
+          `,
+        },
       });
     }
   };
@@ -390,27 +595,27 @@ interface FileListProps {
         description: `All ${trashCount} items have been permanently deleted`,
         color: "success",
         classNames: {
-    base: `
-      custom-toast-width
-      bg-zinc-900
-      text-white
-      px-4
-      py-3
-      border
-      border-zinc-700
-      shadow-xl
-      flex
-      items-start
-      gap-3
-    `,
-    closeButton: `
-      hover:bg-white/10
-      transition
-      p-1
-      rounded
-      ml-auto
-    `,
-  },
+          base: `
+            custom-toast-width
+            bg-zinc-900
+            text-white
+            px-4
+            py-3
+            border
+            border-zinc-700
+            shadow-xl
+            flex
+            items-start
+            gap-3
+          `,
+          closeButton: `
+            hover:bg-white/10
+            transition
+            p-1
+            rounded
+            ml-auto
+          `,
+        },
       });
 
       // Close modal
@@ -422,27 +627,27 @@ interface FileListProps {
         description: "We couldn't empty the trash. Please try again later.",
         color: "danger",
         classNames: {
-    base: `
-      custom-toast-width
-      bg-zinc-900
-      text-white
-      px-4
-      py-3
-      border
-      border-zinc-700
-      shadow-xl
-      flex
-      items-start
-      gap-3
-    `,
-    closeButton: `
-      hover:bg-white/10
-      transition
-      p-1
-      rounded
-      ml-auto
-    `,
-  },
+          base: `
+            custom-toast-width
+            bg-zinc-900
+            text-white
+            px-4
+            py-3
+            border
+            border-zinc-700
+            shadow-xl
+            flex
+            items-start
+            gap-3
+          `,
+          closeButton: `
+            hover:bg-white/10
+            transition
+            p-1
+            rounded
+            ml-auto
+          `,
+        },
       });
     }
   };
@@ -456,27 +661,27 @@ interface FileListProps {
         description: `Getting "${file.name}" ready for download...`,
         color: "primary",
         classNames: {
-    base: `
-      custom-toast-width
-      bg-zinc-900
-      text-white
-      px-4
-      py-3
-      border
-      border-zinc-700
-      shadow-xl
-      flex
-      items-start
-      gap-3
-    `,
-    closeButton: `
-      hover:bg-white/10
-      transition
-      p-1
-      rounded
-      ml-auto
-    `,
-  },
+          base: `
+            custom-toast-width
+            bg-zinc-900
+            text-white
+            px-4
+            py-3
+            border
+            border-zinc-700
+            shadow-xl
+            flex
+            items-start
+            gap-3
+          `,
+          closeButton: `
+            hover:bg-white/10
+            transition
+            p-1
+            rounded
+            ml-auto
+          `,
+        },
       });
 
       // For images, we can use the ImageKit URL directly with optimized settings
@@ -507,27 +712,27 @@ interface FileListProps {
           description: `"${file.name}" is ready to download.`,
           color: "success",
           classNames: {
-    base: `
-      custom-toast-width
-      bg-zinc-900
-      text-white
-      px-4
-      py-3
-      border
-      border-zinc-700
-      shadow-xl
-      flex
-      items-start
-      gap-3
-    `,
-    closeButton: `
-      hover:bg-white/10
-      transition
-      p-1
-      rounded
-      ml-auto
-    `,
-  },
+            base: `
+              custom-toast-width
+              bg-zinc-900
+              text-white
+              px-4
+              py-3
+              border
+              border-zinc-700
+              shadow-xl
+              flex
+              items-start
+              gap-3
+            `,
+            closeButton: `
+              hover:bg-white/10
+              transition
+              p-1
+              rounded
+              ml-auto
+            `,
+          },
         });
 
         // Trigger download
@@ -559,27 +764,27 @@ interface FileListProps {
           description: `"${file.name}" is ready to download.`,
           color: "success",
           classNames: {
-    base: `
-      custom-toast-width
-      bg-zinc-900
-      text-white
-      px-4
-      py-3
-      border
-      border-zinc-700
-      shadow-xl
-      flex
-      items-start
-      gap-3
-    `,
-    closeButton: `
-      hover:bg-white/10
-      transition
-      p-1
-      rounded
-      ml-auto
-    `,
-  },
+            base: `
+              custom-toast-width
+              bg-zinc-900
+              text-white
+              px-4
+              py-3
+              border
+              border-zinc-700
+              shadow-xl
+              flex
+              items-start
+              gap-3
+            `,
+            closeButton: `
+              hover:bg-white/10
+              transition
+              p-1
+              rounded
+              ml-auto
+            `,
+          },
         });
 
         // Trigger download
@@ -596,27 +801,27 @@ interface FileListProps {
         description: "We couldn't download the file. Please try again later.",
         color: "danger",
         classNames: {
-    base: `
-      custom-toast-width
-      bg-zinc-900
-      text-white
-      px-4
-      py-3
-      border
-      border-zinc-700
-      shadow-xl
-      flex
-      items-start
-      gap-3
-    `,
-    closeButton: `
-      hover:bg-white/10
-      transition
-      p-1
-      rounded
-      ml-auto
-    `,
-  },
+          base: `
+            custom-toast-width
+            bg-zinc-900
+            text-white
+            px-4
+            py-3
+            border
+            border-zinc-700
+            shadow-xl
+            flex
+            items-start
+            gap-3
+          `,
+          closeButton: `
+            hover:bg-white/10
+            transition
+            p-1
+            rounded
+            ml-auto
+          `,
+        },
       });
     }
   };
@@ -631,383 +836,404 @@ interface FileListProps {
     }
   };
 
-  // Navigate to a folder
-  const navigateToFolder = (folderId: string, folderName: string) => {
-    setCurrentFolder(folderId);
-    setFolderPath([...folderPath, { id: folderId, name: folderName }]);
-
-    // Notify parent component about folder change
-    if (onFolderChange) {
-      onFolderChange(folderId);
-    }
-  };
-
-  // Navigate back to parent folder
-  const navigateUp = () => {
-    if (folderPath.length > 0) {
-      const newPath = [...folderPath];
-      newPath.pop();
-      setFolderPath(newPath);
-      const newFolderId =
-        newPath.length > 0 ? newPath[newPath.length - 1].id : null;
-      setCurrentFolder(newFolderId);
-
-      // Notify parent component about folder change
-      if (onFolderChange) {
-        onFolderChange(newFolderId);
-      }
-    }
-  };
-
-  // Navigate to specific folder in path
-  const navigateToPathFolder = (index: number) => {
-    if (index < 0) {
-      setCurrentFolder(null);
-      setFolderPath([]);
-
-      // Notify parent component about folder change
-      if (onFolderChange) {
-        onFolderChange(null);
-      }
-    } else {
-      const newPath = folderPath.slice(0, index + 1);
-      setFolderPath(newPath);
-      const newFolderId = newPath[newPath.length - 1].id;
-      setCurrentFolder(newFolderId);
-
-      // Notify parent component about folder change
-      if (onFolderChange) {
-        onFolderChange(newFolderId);
-      }
-    }
-  };
-
-  // Handle file or folder click
-  const handleItemClick = (file: FileType) => {
-    if (file.isFolder) {
-      navigateToFolder(file.id, file.name);
-    } else if (file.type.startsWith("image/")) {
-      openImageViewer(file);
-    }
-  };
-
   if (loading) {
-    return <FileLoadingState />;
+    return (
+      <div className="p-6">
+        <h2 className="text-xl font-semibold mb-4">Loading...</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          {Array.from({ length: 10 }).map((_, index) => (
+            <div
+              key={index}
+              className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 animate-pulse"
+            >
+              <div className="aspect-square rounded-lg mb-3 bg-gray-200 dark:bg-gray-700"></div>
+              <div className="space-y-2">
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+                <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Tabs for filtering files */}
-      <FileTabs
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        files={files}
-        starredCount={starredCount}
-        trashCount={trashCount}
+    <div className="bg-background min-h-screen">
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        onChange={handleFileUpload}
+        className="hidden"
+        accept="*/*"
       />
 
-      {/* Folder navigation */}
-      {activeTab === "all" && (
-        <FolderNavigation
-          folderPath={folderPath}
-          navigateUp={navigateUp}
-          navigateToPathFolder={navigateToPathFolder}
-        />
-      )}
+      {/* Header Section */}
+      <div className="border-b border-gray-200 bg-background sticky top-0 z-10">
+        <div className="px-6 py-4">
+          {/* Action Buttons */}
+          <div className="flex items-center gap-2 mb-4">
+            <Button
+              color="primary"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading}
+              className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+            >
+              <Upload className="w-4 h-4 mr-2" />
+              {isUploading ? `Uploading... ${Math.round(uploadProgress)}%` : 'Upload Files'}
+            </Button>
+            <Button
+              variant="bordered"
+              onClick={handleCreateFolder}
+              className="border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg"
+            >
+              <FolderPlus className="w-4 h-4 mr-2" />
+              New Folder
+            </Button>
+          </div>
 
-      {/* Search and View Controls */}
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-          <Input
-            type="text"
-            placeholder="Search files..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 bg-[#1D1D1D] border-gray-700 text-white placeholder-gray-400"
-          />
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setViewMode("grid")}
-            className={`${viewMode === "grid" ? "bg-gray-700" : ""} text-white`}
-          >
-            <Grid className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setViewMode("list")}
-            className={`${viewMode === "list" ? "bg-gray-700" : ""} text-white`}
-          >
-            <List className="w-4 h-4" />
-          </Button>
+          {/* Tabs for filtering files */}
+          <div className="flex space-x-1 bg-[#d8d8d8] rounded-lg p-1 w-fit">
+            <button
+              onClick={() => setActiveTab("all")}
+              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === "all"
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-600 hover:text-gray-900"
+                }`}
+            >
+              All files
+            </button>
+            <button
+              onClick={() => setActiveTab("starred")}
+              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === "starred"
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-600 hover:text-gray-900"
+                }`}
+            >
+              Starred ({starredCount})
+            </button>
+            <button
+              onClick={() => setActiveTab("trash")}
+              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === "trash"
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-600 hover:text-gray-900"
+                }`}
+            >
+              Trash ({trashCount})
+            </button>
+          </div>
+
+          {/* Folder navigation */}
+          {activeTab === "all" && (
+            <div className="mt-4">
+              <FolderNavigation
+                folderPath={folderPath}
+                navigateUp={navigateUp}
+                navigateToPathFolder={navigateToPathFolder}
+              />
+            </div>
+          )}
+
+          {/* Search and View Controls */}
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between mt-6">
+
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setViewMode("grid")}
+                className={`${viewMode === "grid" ? "bg-gray-100" : ""} text-gray-700 hover:bg-gray-100 rounded-lg`}
+              >
+                <Grid className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setViewMode("list")}
+                className={`${viewMode === "list" ? "bg-gray-100" : ""} text-gray-700 hover:bg-gray-100 rounded-lg`}
+              >
+                <List className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Empty Trash Button for Trash Tab */}
+          {activeTab === "trash" && trashCount > 0 && (
+            <div className="flex justify-end mt-4">
+              <Button
+                color="danger"
+                variant="flat"
+                onClick={() => setEmptyTrashModalOpen(true)}
+                className="text-red-600 border-red-300 hover:bg-red-50 hover:border-red-400 rounded-lg"
+              >
+                Empty trash ({trashCount})
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Empty Trash Button for Trash Tab */}
-      {activeTab === "trash" && trashCount > 0 && (
-        <div className="flex justify-end">
-          <Button
-            color="danger"
-            variant="flat"
-            onClick={() => setEmptyTrashModalOpen(true)}
-            className="text-white"
-          >
-            Empty Trash ({trashCount})
-          </Button>
-        </div>
-      )}
+      {/* Main Content */}
+      <div className="px-6 py-6">
+        {/* Files Grid/List */}
+        {filteredFiles.length === 0 ? (
+          <FileEmptyState activeTab={activeTab} />
+        ) : viewMode === "grid" ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+            {filteredFiles.map((file) => {
+              const thumbnailUrl = getThumbnailUrl(file);
 
-      {/* Files Grid/List */}
-      {filteredFiles.length === 0 ? (
-        <FileEmptyState activeTab={activeTab} />
-      ) : viewMode === "grid" ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-          {filteredFiles.map((file) => {
-            const thumbnailUrl = getThumbnailUrl(file);
-            
-            return (
-        <Card
-                    key={file.id}
-                className={`group relative aspect-square rounded-2xl shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 overflow-hidden cursor-pointer ${
-                  file.isFolder || file.type.startsWith("image/") ? "cursor-pointer" : ""
-                      }`}
-                    onClick={() => handleItemClick(file)}
-                  >
-                {/* Background Image with Uniform Blur */}
-                <div className="absolute inset-0">
-                  {thumbnailUrl ? (
-                    <Image
-                      src={thumbnailUrl}
-                      alt={file.name}
-                      fill
-                      className="object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-gray-600 to-gray-800 flex items-center justify-center">
-                        <FileIcon file={file} />
-                    </div>
-                  )}
-                  {/* Uniform blur overlay for better text readability */}
-                  <div className="absolute inset-0 bg-black/15 backdrop-blur-[0.5px] group-hover:bg-black/5 group-hover:backdrop-blur-[0.25px] transition-all duration-300"></div>
-                </div>
+              return (
+                <Card
+                  key={file.id}
+                  className="group relative bg-white rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden"
+                  onClick={() => handleItemClick(file)}
+                >
 
-                {/* File/Folder Info Overlay */}
-                <div className="absolute bottom-0 left-0 right-0 p-4">
-                  <div className="text-white w-full space-y-2">
-                    <button 
-                      className="font-semibold text-base text-white truncate w-full text-left hover:text-gray-200 transition-colors"
-                      title={file.name}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleItemClick(file);
-                      }}
-                      aria-label={`Open ${file.name}`}
-                    >
-                              {file.name}
-                    </button>
-                    <div className="text-xs text-gray-400">
-                      {format(new Date(file.createdAt), "MMM d, yyyy")}
-                    </div>
-                    {!file.isFolder && (
-                      <div className="flex items-center gap-2 text-xs text-gray-400">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
-                          file.type.includes('pdf') ? 'bg-red-500/20 text-red-400' :
-                          file.type.includes('png') ? 'bg-green-500/20 text-green-400' :
-                          file.type.includes('jpeg') || file.type.includes('jpg') ? 'bg-yellow-500/20 text-yellow-400' :
-                          file.type.includes('gif') ? 'bg-purple-500/20 text-purple-400' :
-                          file.type.includes('webp') ? 'bg-blue-500/20 text-blue-400' :
-                          'bg-white/10 text-white/70'
-                        }`}>
-                          {file.type.split('/')[1]?.toUpperCase() || 'FILE'}
-                            </span>
-                        {file.size && (
-                          <span>{formatFileSize(file.size)}</span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Hover Actions */}
-                <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
-                  {!file.isFolder && (
-                    <Tooltip content="Download">
-                      <button
-                        className="p-2 bg-black/50 backdrop-blur-md rounded-full shadow-lg hover:bg-black/70 transition-colors border border-white/10"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDownloadFile(file);
-                        }}
-                        aria-label={`Download ${file.name}`}
-                      >
-                        <ExternalLink className="w-4 h-4 text-white" />
-                      </button>
-                              </Tooltip>
-                            )}
-                  <Tooltip content={file.isStarred ? "Remove from starred" : "Add to starred"}>
-                    <button
-                      className="p-2 bg-black/50 backdrop-blur-md rounded-full shadow-lg hover:bg-black/70 transition-colors border border-white/10"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleStarFile(file.id);
-                      }}
-                      aria-label={file.isStarred ? "Remove from starred" : "Add to starred"}
-                    >
-                      <Star 
-                        className={`w-4 h-4 ${file.isStarred ? 'text-yellow-400 fill-current' : 'text-white'}`} 
-                      />
-                    </button>
-                  </Tooltip>
-                  <Tooltip content={file.isTrashed ? "Restore" : "Move to trash"}>
-                    <button
-                      className="p-2 bg-black/50 backdrop-blur-md rounded-full shadow-lg hover:bg-black/70 transition-colors border border-white/10"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleTrashFile(file.id);
-                      }}
-                      aria-label={file.isTrashed ? "Restore" : "Move to trash"}
-                    >
-                      <Trash className="w-4 h-4 text-white" />
-                    </button>
-                  </Tooltip>
-                          </div>
-
-                {/* Star indicator for starred files */}
-                {file.isStarred && (
-                  <div className="absolute top-3 left-3">
-                    <Star className="w-5 h-5 text-yellow-400 fill-current" />
-                  </div>
-                )}
-              </Card>
-            );
-                            })}
-                          </div>
-      ) : (
-        // List View
-        <div className="space-y-2">
-          {filteredFiles.map((file) => {
-            const thumbnailUrl = getThumbnailUrl(file);
-            
-            return (
-              <Card
-                key={file.id}
-                className={`group relative p-4 rounded-xl shadow-sm hover:shadow-md hover:bg-gray-800/50 transition-all duration-200 cursor-pointer ${
-                  file.isFolder || file.type.startsWith("image/") ? "cursor-pointer" : ""
-                }`}
-                onClick={() => handleItemClick(file)}
-              >
-                <div className="flex items-center gap-4">
-                  {/* Thumbnail/Icon */}
-                  <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-700 flex items-center justify-center flex-shrink-0">
+                  {/* Thumbnail/Preview */}
+                  <div className="aspect-square bg-gray-50 flex items-center justify-center relative overflow-hidden pointer-events-none">
                     {thumbnailUrl ? (
                       <Image
                         src={thumbnailUrl}
                         alt={file.name}
-                        width={48}
-                        height={48}
-                        className="object-cover w-full h-full"
+                        fill
+                        className="object-cover"
                       />
                     ) : (
-                      <FileIcon file={file} />
+                      <div className="w-full h-full bg-gray-50 flex items-center justify-center">
+                        {file.isFolder ? (
+                          <Folder className="w-12 h-12 text-blue-500" />
+                        ) : (
+                          <FileIcon file={file} />
+                        )}
+                      </div>
                     )}
-                        </div>
+
+                    {/* Hover Actions Overlay */}
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-200 pointer-events-none">
+                      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 pointer-events-auto">
+                        {!file.isFolder && (
+                          <Tooltip content="Download">
+                            <button
+                              className="p-1.5 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDownloadFile(file);
+                              }}
+                            >
+                              <ExternalLink className="w-3.5 h-3.5 text-gray-600" />
+                            </button>
+                          </Tooltip>
+                        )}
+                        <Tooltip content={file.isStarred ? "Remove from starred" : "Add to starred"}>
+                          <button
+                            className="p-1.5 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleStarFile(file.id);
+                            }}
+                          >
+                            <Star
+                              className={`w-3.5 h-3.5 ${file.isStarred ? 'text-yellow-500 fill-current' : 'text-gray-600'}`}
+                            />
+                          </button>
+                        </Tooltip>
+                        <Tooltip content={file.isTrashed ? "Restore" : "Move to trash"}>
+                          <button
+                            className="p-1.5 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleTrashFile(file.id);
+                            }}
+                          >
+                            <Trash className="w-3.5 h-3.5 text-gray-600" />
+                          </button>
+                        </Tooltip>
+                        {/* Permanent Delete Button for Trash Tab */}
+                        {activeTab === "trash" && (
+                          <Tooltip content="Delete permanently">
+                            <button
+                              className="p-1.5 bg-white rounded-full shadow-md hover:bg-red-50 transition-colors"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedFile(file);
+                                setDeleteModalOpen(true);
+                              }}
+                            >
+                              <X className="w-3.5 h-3.5 text-red-600" />
+                            </button>
+                          </Tooltip>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Star indicator for starred files */}
+                    {file.isStarred && (
+                      <div className="absolute top-2 left-2">
+                        <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                      </div>
+                    )}
+                  </div>
 
                   {/* File Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-medium text-white truncate" title={file.name}>
-                        {file.name}
-                      </h3>
-                      {file.isStarred && (
-                        <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                      )}
+                  <div className="p-3">
+                    <h3
+                      className="font-medium text-sm text-gray-900 truncate mb-1"
+                      title={file.name}
+                    >
+                      {file.name}
+                    </h3>
+                    <div className="text-xs text-gray-500">
+                      {format(new Date(file.createdAt), "MMM d, yyyy")}
+                    </div>
+                    {!file.isFolder && file.size && (
+                      <div className="text-xs text-gray-500 mt-1">
+                        {formatFileSize(file.size)}
                       </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-400 mt-1">
-                      <span>{formatDistanceToNow(new Date(file.createdAt), { addSuffix: true })}</span>
-                      {!file.isFolder && (
-                        <>
-                          <span>•</span>
-                          <span>{formatFileSize(file.size)}</span>
-                          <span>•</span>
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                            file.type.includes('pdf') ? 'bg-red-500/20 text-red-400' :
-                            file.type.includes('png') ? 'bg-green-500/20 text-green-400' :
-                            file.type.includes('jpeg') || file.type.includes('jpg') ? 'bg-yellow-500/20 text-yellow-400' :
-                            file.type.includes('gif') ? 'bg-purple-500/20 text-purple-400' :
-                            file.type.includes('webp') ? 'bg-blue-500/20 text-blue-400' :
-                            'bg-white/10 text-white/70'
-                          }`}>
-                            {file.type.split('/')[1]?.toUpperCase() || 'FILE'}
-                          </span>
-                        </>
-                      )}
-                      </div>
+                    )}
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        ) : (
+          // List View - Dropbox style
+          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+            {/* Table Header */}
+            <div className="bg-gray-50 border-b border-gray-200 px-4 py-3">
+              <div className="flex items-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <div className="flex-1">Name</div>
+                <div className="w-32 text-right">Modified</div>
+                <div className="w-24 text-right">Size</div>
+                <div className="w-16"></div>
+              </div>
+            </div>
+
+            {/* File List */}
+            <div className="divide-y divide-gray-100">
+              {filteredFiles.map((file) => {
+                const thumbnailUrl = getThumbnailUrl(file);
+
+                return (
+                  <div
+                    key={file.id}
+                    className="group flex items-center px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors"
+                    onClick={() => handleItemClick(file)}
+                  >
+                    {/* File Icon/Thumbnail and Name */}
+                    <div className="flex items-center flex-1 min-w-0">
+                      <div className="w-8 h-8 rounded flex items-center justify-center mr-3 flex-shrink-0 overflow-hidden bg-gray-100">
+                        {thumbnailUrl ? (
+                          <Image
+                            src={thumbnailUrl}
+                            alt={file.name}
+                            width={32}
+                            height={32}
+                            className="object-cover w-full h-full rounded"
+                          />
+                        ) : file.isFolder ? (
+                          <Folder className="w-6 h-6 text-blue-500" />
+                        ) : (
+                          <FileIcon file={file} />
+                        )}
                       </div>
 
-                  {/* Actions */}
-                  <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    {!file.isFolder && (
-                      <Tooltip content="Download">
-                        <button
-                          className="p-2 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDownloadFile(file);
-                          }}
-                          aria-label={`Download ${file.name}`}
-                        >
-                          <ExternalLink className="w-4 h-4 text-white" />
-                        </button>
-                      </Tooltip>
-                    )}
-                    <Tooltip content={file.isStarred ? "Remove from starred" : "Add to starred"}>
-                      <button
-                        className="p-2 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleStarFile(file.id);
-                        }}
-                        aria-label={file.isStarred ? "Remove from starred" : "Add to starred"}
-                      >
-                        <Star 
-                          className={`w-4 h-4 ${file.isStarred ? 'text-yellow-400 fill-current' : 'text-white'}`} 
-                        />
-                      </button>
-                    </Tooltip>
-                    <Tooltip content={file.isTrashed ? "Restore" : "Move to trash"}>
-                      <button
-                        className="p-2 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleTrashFile(file.id);
-                        }}
-                        aria-label={file.isTrashed ? "Restore" : "Move to trash"}
-                      >
-                        <Trash className="w-4 h-4 text-white" />
-                      </button>
-                    </Tooltip>
+                      <div className="flex items-center min-w-0 flex-1">
+                        <span className="font-medium text-gray-900 truncate" title={file.name}>
+                          {file.name}
+                        </span>
+                        {file.isStarred && (
+                          <Star className="w-4 h-4 text-yellow-500 fill-current ml-2 flex-shrink-0" />
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Modified Date */}
+                    <div className="w-32 text-right text-sm text-gray-500">
+                      {formatDistanceToNow(new Date(file.createdAt), { addSuffix: true })}
+                    </div>
+
+                    {/* File Size */}
+                    <div className="w-24 text-right text-sm text-gray-500">
+                      {!file.isFolder && file.size ? formatFileSize(file.size) : "--"}
+                    </div>
+
+                    {/* Actions */}
+                    <div className="w-16 flex items-center justify-end">
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                        {!file.isFolder && (
+                          <Tooltip content="Download">
+                            <button
+                              className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDownloadFile(file);
+                              }}
+                            >
+                              <ExternalLink className="w-4 h-4" />
+                            </button>
+                          </Tooltip>
+                        )}
+                        <Tooltip content={file.isStarred ? "Remove from starred" : "Add to starred"}>
+                          <button
+                            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleStarFile(file.id);
+                            }}
+                          >
+                            <Star
+                              className={`w-4 h-4 ${file.isStarred ? 'text-yellow-500 fill-current' : ''}`}
+                            />
+                          </button>
+                        </Tooltip>
+                        <Tooltip content={file.isTrashed ? "Restore" : "Move to trash"}>
+                          <button
+                            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleTrashFile(file.id);
+                            }}
+                          >
+                            <Trash className="w-4 h-4" />
+                          </button>
+                        </Tooltip>
+                        {/* Permanent Delete Button for Trash Tab */}
+                        {activeTab === "trash" && (
+                          <Tooltip content="Delete permanently">
+                            <button
+                              className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedFile(file);
+                                setDeleteModalOpen(true);
+                              }}
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </Tooltip>
+                        )}
+                      </div>
+                    </div>
                   </div>
+                );
+              })}
+            </div>
           </div>
-        </Card>
-            );
-          })}
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Delete confirmation modal */}
       <ConfirmationModal
         isOpen={deleteModalOpen}
         onOpenChange={setDeleteModalOpen}
-        title="Confirm Permanent Deletion"
-        description={`Are you sure you want to permanently delete this file?`}
+        title="Delete permanently?"
+        description={`"${selectedFile?.name}" will be permanently deleted. You can't undo this action.`}
         icon={X}
-        iconColor="text-danger"
-        confirmText="Delete Permanently"
+        iconColor="text-red-500"
+        confirmText="Delete permanently"
         confirmColor="danger"
         onConfirm={() => {
           if (selectedFile) {
@@ -1022,11 +1248,11 @@ interface FileListProps {
       <ConfirmationModal
         isOpen={emptyTrashModalOpen}
         onOpenChange={setEmptyTrashModalOpen}
-        title="Empty Trash"
-        description={`Are you sure you want to empty the trash?`}
+        title="Empty trash?"
+        description={`All ${trashCount} items in your trash will be permanently deleted. You can't undo this action.`}
         icon={Trash}
-        iconColor="text-danger"
-        confirmText="Empty Trash"
+        iconColor="text-red-500"
+        confirmText="Empty trash"
         confirmColor="danger"
         onConfirm={handleEmptyTrash}
         isDangerous={true}
