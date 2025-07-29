@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
-import { Folder, Star, Trash, X, ExternalLink, StarIcon, EyeClosed, Filter, Grid, List, Upload, Plus, FolderPlus } from "lucide-react";
+import { Folder, Star, Trash, X, ExternalLink, StarIcon, EyeClosed, Filter, Grid, List } from "lucide-react";
 import { Card } from "@heroui/card";
 import { Input } from "@heroui/input";
 import { Button } from "@heroui/button";
@@ -9,7 +9,6 @@ import { Tooltip } from "@heroui/tooltip";
 import { addToast } from "@heroui/toast";
 import Image from "next/image";
 import React from "react";
-
 import { formatDistanceToNow, format } from "date-fns";
 import type { File as FileType } from "@/lib/db/schema";
 import axios from "axios";
@@ -20,19 +19,22 @@ import FileLoadingState from "@/components/FileLoadingState";
 import FileTabs from "@/components/FileTabs";
 import FolderNavigation from "@/components/FolderNavigation";
 
-
 interface FileListProps {
   userId: string;
   refreshTrigger?: number;
-  onFolderChange?: (folderId: string | null) => void;
+  onFolderChange?: (folderId: string | null, folderPath: Array<{ id: string; name: string }>) => void;
   onDeleteSuccess?: () => void;
+  // Add these new props to handle external operations
+  externalRefreshTrigger?: number;
 }
 
 export default function FileList({
   userId,
   refreshTrigger = 0,
   onFolderChange,
+  externalRefreshTrigger = 0,
 }: FileListProps) {
+  
   const [files, setFiles] = useState<FileType[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("all");
@@ -45,11 +47,6 @@ export default function FileList({
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [emptyTrashModalOpen, setEmptyTrashModalOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<FileType | null>(null);
-
-  // Upload states
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch files
   const fetchFiles = useCallback(async () => {
@@ -79,163 +76,33 @@ export default function FileList({
     }
   }, [userId, currentFolder]);
 
-  // Fetch files when userId, refreshTrigger, or currentFolder changes
+  // Fetch files when userId, refreshTrigger, currentFolder, or externalRefreshTrigger changes
   useEffect(() => {
     fetchFiles();
-  }, [fetchFiles]);
+  }, [fetchFiles, externalRefreshTrigger]);
 
-  // Handle file upload
   // Common toast styles
-const toastClassNames = {
-  base: `
-    custom-toast-width
-    bg-zinc-900
-    text-white
-    px-4
-    py-3
-    border
-    border-zinc-700
-    shadow-xl
-    flex
-    items-start
-    gap-3
-  `,
-  closeButton: `
-    hover:bg-white/10
-    transition
-    p-1
-    rounded
-    ml-auto
-  `,
-};
-
-const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFiles = event.target.files;
-    if (!selectedFiles || selectedFiles.length === 0) return;
-
-    // Validate file types and sizes
-    const maxFileSize = 50 * 1024 * 1024; // 50MB limit
-    const allowedTypes = [
-      'image/jpeg',
-      'image/png',
-      'image/gif',
-      'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'text/plain'
-    ];
-
-    for (const file of selectedFiles) {
-      if (!allowedTypes.includes(file.type)) {
-        addToast({
-          title: "Invalid File Type",
-          description: `${file.name} is not a supported file type. Please upload only images, PDFs, Word documents, or text files.`,
-          color: "danger",
-          classNames: toastClassNames
-        });
-        return;
-      }
-      if (file.size > maxFileSize) {
-        addToast({
-          title: "File Too Large",
-          description: `${file.name} exceeds the 50MB size limit.`,
-          color: "danger",
-          classNames: toastClassNames
-        });
-        return;
-      }
-    }
-
-    setIsUploading(true);
-    setUploadProgress(0);
-
-    try {
-      for (let i = 0; i < selectedFiles.length; i++) {
-        const file = selectedFiles[i];
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('userId', userId);
-
-        // Add current folder as parent if we're inside a folder
-        if (currentFolder) {
-          formData.append('parentId', currentFolder);
-          console.log('Uploading to folder:', currentFolder);
-        }
-
-        const response = await axios.post('/api/files/upload', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-          onUploadProgress: (progressEvent) => {
-            const progress = Math.round(
-              ((progressEvent.loaded || 0) * 100) / (progressEvent.total || 1)
-            );
-            setUploadProgress((i / selectedFiles.length) * 100 + (progress / selectedFiles.length));
-          },
-        });
-
-        console.log('Upload response:', response.data);
-      }
-
-      addToast({
-        title: "Upload Successful",
-        description: `${selectedFiles.length} file(s) uploaded successfully ${currentFolder ? 'to current folder' : ''}`,
-        color: "success",
-        classNames: toastClassNames
-      });
-
-      // Refresh the file list
-      await fetchFiles();
-    } catch (error) {
-      console.error('Upload error:', error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to upload files";
-      addToast({
-        title: "Upload Failed",
-        description: `${errorMessage}. Please try again.`,
-        color: "danger",
-        classNames: toastClassNames
-      });
-    } finally {
-      setIsUploading(false);
-      setUploadProgress(0);
-      // Reset the file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    }
-  };
-
-  // Create new folder
-  const handleCreateFolder = async () => {
-    const folderName = prompt('Enter folder name:');
-    if (!folderName?.trim()) return;
-
-    try {
-      const response = await axios.post('/api/folders/create', {
-        name: folderName.trim(),
-        userId,
-        parentId: currentFolder,
-      });
-
-      addToast({
-        title: "Folder Created",
-        description: `Folder "${folderName}" created successfully`,
-        color: "success",
-        classNames: toastClassNames
-      });
-
-      // Refresh the file list
-      await fetchFiles();
-    } catch (error) {
-      console.error('Create folder error:', error);
-      const errorMessage = error instanceof Error ? error.message : "Could not create the folder";
-      addToast({
-        title: "Failed to Create Folder",
-        description: `${errorMessage}. Please try again.`,
-        color: "danger",
-        classNames: toastClassNames
-      });
-    }
+  const toastClassNames = {
+    base: `
+      custom-toast-width
+      bg-zinc-900
+      text-white
+      px-4
+      py-3
+      border
+      border-zinc-700
+      shadow-xl
+      flex
+      items-start
+      gap-3
+    `,
+    closeButton: `
+      hover:bg-white/10
+      transition
+      p-1
+      rounded
+      ml-auto
+    `,
   };
 
   // Filter files based on active tab and search query
@@ -255,8 +122,6 @@ const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         filtered = filtered.filter((file) => !file.isTrashed);
         break;
     }
-
-
 
     return filtered;
   }, [files, activeTab]);
@@ -290,14 +155,15 @@ const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
   // Navigate to a folder
   const navigateToFolder = useCallback((folderId: string, folderName: string) => {
     console.log('Navigating to folder:', folderId, folderName);
+    const newPath = [...folderPath, { id: folderId, name: folderName }];
     setCurrentFolder(folderId);
-    setFolderPath(prev => [...prev, { id: folderId, name: folderName }]);
+    setFolderPath(newPath);
 
-    // Notify parent component about folder change
+    // Notify parent component about folder change with the new path
     if (onFolderChange) {
-      onFolderChange(folderId);
+      onFolderChange(folderId, newPath);
     }
-  }, [onFolderChange]);
+  }, [folderPath, onFolderChange]);
 
   // Navigate back to parent folder (from FolderNavigation component)
   const navigateUp = useCallback(() => {
@@ -312,7 +178,7 @@ const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
 
       // Notify parent component about folder change
       if (onFolderChange) {
-        onFolderChange(newFolderId);
+        onFolderChange(newFolderId, newPath);
       }
     }
   }, [folderPath, onFolderChange]);
@@ -327,7 +193,7 @@ const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
 
       // Notify parent component about folder change
       if (onFolderChange) {
-        onFolderChange(null);
+        onFolderChange(null, []);
       }
     } else {
       const newPath = folderPath.slice(0, index + 1);
@@ -339,7 +205,7 @@ const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
 
       // Notify parent component about folder change
       if (onFolderChange) {
-        onFolderChange(newFolderId);
+        onFolderChange(newFolderId, newPath);
       }
     }
   }, [folderPath, onFolderChange]);
@@ -860,40 +726,9 @@ const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
 
   return (
     <div className="bg-background min-h-screen">
-      {/* Hidden file input */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        multiple
-        onChange={handleFileUpload}
-        className="hidden"
-        accept="*/*"
-      />
-
       {/* Header Section */}
       <div className="border-b border-gray-200 bg-background sticky top-0 z-10">
         <div className="px-6 py-4">
-          {/* Action Buttons */}
-          <div className="flex items-center gap-2 mb-4">
-            <Button
-              color="primary"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isUploading}
-              className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
-            >
-              <Upload className="w-4 h-4 mr-2" />
-              {isUploading ? `Uploading... ${Math.round(uploadProgress)}%` : 'Upload Files'}
-            </Button>
-            <Button
-              variant="bordered"
-              onClick={handleCreateFolder}
-              className="border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg"
-            >
-              <FolderPlus className="w-4 h-4 mr-2" />
-              New Folder
-            </Button>
-          </div>
-
           {/* Tabs for filtering files */}
           <div className="flex space-x-1 bg-[#d8d8d8] rounded-lg p-1 w-fit">
             <button
@@ -938,7 +773,6 @@ const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
 
           {/* Search and View Controls */}
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between mt-6">
-
             <div className="flex items-center gap-2">
               <Button
                 variant="ghost"

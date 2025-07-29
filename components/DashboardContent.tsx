@@ -1,13 +1,11 @@
-// Example: How to use the Recents component in your dashboard or main page
-
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import axios from "axios";
 import Recents from "@/components/dashboard/recents";
 import FileList from "@/components/FileList";
 import Topbar from "./dashboard/Topbar";
 import QuickActions from "./dashboard/QuickActions";
-
 
 type User = {
   id: string;
@@ -22,56 +20,87 @@ interface DashboardProps {
   user?: User;
 }
 
-
 const DashboardContent: React.FC<DashboardProps> = ({ user }) => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [fileListRefreshTrigger, setFileListRefreshTrigger] = useState(0);
+  const [files, setFiles] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  // Function to trigger refresh when files are uploaded/modified
-  const handleRefresh = () => {
-    setRefreshTrigger(prev => prev + 1);
-  };
+  // Folder navigation state
+  const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
+  const [currentFolderPath, setCurrentFolderPath] = useState<Array<{ id: string; name: string }>>([]);
 
-  // Early return if no user
+  // Callback to handle folder navigation
+  const handleFolderChange = useCallback(
+    (folderId: string | null, folderPath: Array<{ id: string; name: string }>) => {
+      setCurrentFolderId(folderId);
+      setCurrentFolderPath(folderPath);
+    },
+    []
+  );
+
+  // Callback when a file/folder is created/deleted/uploaded
+  const handleActionComplete = useCallback(() => {
+    setFileListRefreshTrigger(prev => prev + 1);
+  }, []);
+
+  // Search: fetch all files on mount or refresh
+  useEffect(() => {
+    const fetchAllFiles = async () => {
+      if (!user?.id) return;
+      try {
+        const response = await axios.get(`/api/files?userId=${user.id}`);
+        setFiles(response.data);
+      } catch (error) {
+        console.error("Error fetching files:", error);
+      }
+    };
+
+    fetchAllFiles();
+  }, [user?.id, refreshTrigger]);
+
+  // Return fallback if user is not logged in
   if (!user?.id) {
     return (
-      <div className="min-h-screen  flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <p>Please log in to view your dashboard.</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen ">
-      {/* Recent Activity Section - Shows latest 4 items */}
-      <Topbar/>
-      <QuickActions onUploadSuccess={handleRefresh} userId={user.id} />
-      <Recents 
-        userId={user.id} // Now guaranteed to be string
-        limit={4} // Show only 4 most recent items
-        refreshTrigger={refreshTrigger}
+    <div className="min-h-screen">
+      {/* Topbar with search */}
+      <Topbar
+        user={user}
+        files={files}
+        onSearch={(query) => setSearchQuery(query)}
       />
 
-      {/* Main File List */}
-      <FileList 
-        userId={user.id} // Now guaranteed to be string
-        refreshTrigger={refreshTrigger}
-          onDeleteSuccess={() => setRefreshTrigger(prev => prev + 1)}
-// 👈 toggle to refetch
-
-        onFolderChange={(folderId) => {
-          // Handle folder navigation if needed
-          console.log("Navigated to folder:", folderId);
-        }}
+      {/* Action buttons: Upload, Create Folder */}
+      <QuickActions
+        userId={user.id}
+        currentFolderId={currentFolderId}
+        currentFolderPath={currentFolderPath}
+        onActionComplete={handleActionComplete}
       />
 
-      {/* Example: Button to trigger refresh */}
-      <button 
-        onClick={handleRefresh}
+      {/* Main File List View */}
+      <FileList
+        userId={user.id}
+        externalRefreshTrigger={fileListRefreshTrigger}
+        onFolderChange={handleFolderChange}
+      />
+
+      {/* Manual Refresh Button (for dev/debug) */}
+      <button
+        onClick={() => setFileListRefreshTrigger(prev => prev + 1)}
         className="fixed bottom-4 right-4 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg"
       >
         Refresh
       </button>
     </div>
   );
-}
+};
+
 export default DashboardContent;
