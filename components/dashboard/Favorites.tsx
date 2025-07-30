@@ -62,13 +62,33 @@ export default function Favorites() {
     }
   };
 
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '--';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  };
+
+  const getRelativeTime = (date: string) => {
+    const now = new Date();
+    const fileDate = new Date(date);
+    const diffTime = Math.abs(now.getTime() - fileDate.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 1) return '1 day ago';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffDays < 30) return `${Math.ceil(diffDays / 7)} weeks ago`;
+    return format(fileDate, "MMM d, yyyy");
+  };
+
   if (loading) {
     return (
-      <div className="p-4 md:p-6">
-        <h2 className="text-xl font-semibold mb-4">Favorites</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+      <div className="p-4 md:p-6 bg-gray-900 min-h-screen">
+        <h2 className="text-xl font-semibold mb-4 text-white">Favorites</h2>
+        <div className="space-y-2">
           {[...Array(10)].map((_, idx) => (
-            <div key={idx} className="h-16 w-full rounded-lg bg-gray-200 animate-pulse" />
+            <div key={idx} className="h-12 w-full rounded bg-gray-800 animate-pulse" />
           ))}
         </div>
       </div>
@@ -76,109 +96,192 @@ export default function Favorites() {
   }
 
   return (
-    <div className="p-4 md:p-6">
-      <div className="flex justify-between items-center mb-4">
+    <div className="p-4 md:p-6 bg-background min-h-screen">
+      <div className="flex justify-between items-center mb-6">
         <div className="flex items-center space-x-2">
           <Star className="w-6 h-6 text-yellow-500" />
-          <h2 className="text-xl font-semibold">Favorites</h2>
-          <span className="text-sm text-gray-500">({files.length} items)</span>
+          <h2 className="text-xl font-semibold text-white">Favorites</h2>
+          <span className="text-sm text-gray-400">({files.length} items)</span>
         </div>
 
         <div className="flex items-center space-x-2">
           <button
             onClick={() => setViewMode("grid")}
-            className={`p-2 rounded ${viewMode === "grid" ? "bg-gray-200 dark:bg-gray-700" : ""}`}
+            className={`p-2 rounded ${viewMode === "grid" ? "bg-gray-700" : "bg-gray-800 hover:bg-gray-100"} transition-colors`}
             aria-label="Grid view"
           >
-            <Grid className="w-5 h-5" />
+            <Grid className="w-5 h-5 text-white" />
           </button>
           <button
             onClick={() => setViewMode("list")}
-            className={`p-2 rounded ${viewMode === "list" ? "bg-gray-200 dark:bg-gray-700" : ""}`}
+            className={`p-2 rounded ${viewMode === "list" ? "bg-gray-700" : "bg-gray-800 hover:bg-gray-700"} transition-colors`}
             aria-label="List view"
           >
-            <List className="w-5 h-5" />
+            <List className="w-5 h-5 text-white" />
           </button>
         </div>
       </div>
 
       {files.length === 0 ? (
         <div className="text-center py-12">
-          <Star className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-600 mb-2">No Favorites Yet</h3>
+          <Star className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-300 mb-2">No Favorites Yet</h3>
           <p className="text-gray-500">Star your important files to access them quickly here.</p>
         </div>
       ) : (
-        <div className={viewMode === "grid" ? "grid-view" : "list-view"}>
-          {files.map(file => (
-            <FileItem
-              key={file.id}
-              file={file}
-              viewMode={viewMode}
-              onUnstar={handleUnstar}
-            />
-          ))}
-        </div>
+        <>
+          {viewMode === "list" ? (
+            <div className="bg-background rounded-lg overflow-hidden">
+              {/* Table Header */}
+              <div className="grid grid-cols-12 gap-4 px-4 py-3 bg-background border-b border-gray-700">
+                <div className="col-span-6">
+                  <span className="text-sm font-medium text-gray-300 uppercase tracking-wide">NAME</span>
+                </div>
+                <div className="col-span-3">
+                  <span className="text-sm font-medium text-gray-300 uppercase tracking-wide">MODIFIED</span>
+                </div>
+                <div className="col-span-2">
+                  <span className="text-sm font-medium text-gray-300 uppercase tracking-wide">SIZE</span>
+                </div>
+                <div className="col-span-1"></div>
+              </div>
+              
+              {/* File List */}
+              <div className="divide-y divide-white/10">
+                {files.map(file => (
+                  <FileListItem
+                    key={file.id}
+                    file={file}
+                    onUnstar={handleUnstar}
+                    formatFileSize={formatFileSize}
+                    getRelativeTime={getRelativeTime}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              {files.map(file => (
+                <FileGridItem
+                  key={file.id}
+                  file={file}
+                  onUnstar={handleUnstar}
+                />
+              ))}
+            </div>
+          )}
+        </>
       )}
     </div>
   );
 }
 
-interface FileItemProps {
+interface FileListItemProps {
   file: FileType;
-  viewMode: "grid" | "list";
   onUnstar: (fileId: string) => void;
+  formatFileSize: (bytes: number) => string;
+  getRelativeTime: (date: string) => string;
 }
 
-function FileItem({ file, viewMode, onUnstar }: FileItemProps) {
+function FileListItem({ file, onUnstar, formatFileSize, getRelativeTime }: FileListItemProps) {
   const [showActions, setShowActions] = useState(false);
   const thumbnailUrl = getThumbnailUrl(file);
 
   return (
     <div
-      className={`
-        group relative rounded-lg overflow-hidden transition-all duration-200
-        ${viewMode === "grid" 
-          ? "aspect-square hover:shadow-lg" 
-          : "flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800"}
-      `}
+      className="grid grid-cols-12 gap-4 px-4 py-3 hover:bg-gray-750 transition-colors group"
+      onMouseEnter={() => setShowActions(true)}
+      onMouseLeave={() => setShowActions(false)}
+    >
+      {/* Name column with icon and star */}
+      <div className="col-span-6 flex items-center space-x-3 min-w-0">
+        <div className="flex-shrink-0 w-8 h-8 relative">
+          <Image
+            src={thumbnailUrl || '/placeholder-image.jpg'}
+            alt={file.name}
+            width={32}
+            height={32}
+            className="rounded object-cover"
+          />
+        </div>
+        <div className="flex items-center space-x-2 min-w-0 flex-1">
+          <span className="text-white font-medium truncate">{file.name}</span>
+          <Star className="w-4 h-4 text-yellow-400 flex-shrink-0 fill-current" />
+        </div>
+      </div>
+
+      {/* Modified column */}
+      <div className="col-span-3 flex items-center">
+        <span className="text-gray-400 text-sm">
+          {getRelativeTime(file.updatedAt || file.createdAt)}
+        </span>
+      </div>
+
+      {/* Size column */}
+      <div className="col-span-2 flex items-center">
+        <span className="text-gray-400 text-sm">
+          {file.size ? formatFileSize(file.size) : '--'}
+        </span>
+      </div>
+
+      {/* Actions column */}
+      <div className="col-span-1 flex items-center justify-end">
+        {showActions && (
+          <button
+            onClick={() => onUnstar(file.id)}
+            className="p-1 rounded-full bg-red-600 hover:bg-red-700 transition-colors opacity-0 group-hover:opacity-100"
+            aria-label="Remove from favorites"
+            title="Remove from favorites"
+          >
+            <X className="w-4 h-4 text-white" />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+interface FileGridItemProps {
+  file: FileType;
+  onUnstar: (fileId: string) => void;
+}
+
+function FileGridItem({ file, onUnstar }: FileGridItemProps) {
+  const [showActions, setShowActions] = useState(false);
+  const thumbnailUrl = getThumbnailUrl(file);
+
+  return (
+    <div
+      className="group relative aspect-square rounded-lg overflow-hidden bg-gray-800 hover:bg-gray-750 transition-all duration-200"
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
     >
       {/* Thumbnail */}
-      <div className={`${viewMode === "grid" ? "w-full h-full" : "w-10 h-10 mr-3 flex-shrink-0"} relative`}>
+      <div className="w-full h-full relative">
         <Image
           src={thumbnailUrl || '/placeholder-image.jpg'}
           alt={file.name}
           fill
-          className="object-cover rounded opacity-75"
+          className="object-cover opacity-75"
         />
-        <div className="absolute top-1 left-1">
-          <Star className="w-4 h-4 text-yellow-400" />
+        <div className="absolute top-2 left-2">
+          <Star className="w-4 h-4 text-yellow-400 fill-current" />
         </div>
       </div>
 
       {/* File Info */}
-      <div className={`
-        flex flex-col justify-center
-        ${viewMode === "grid" ? "absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black to-transparent" : "flex-grow"}
-      `}>
-        <span className={`font-medium truncate ${viewMode === "grid" ? "text-white" : "text-gray-800 dark:text-white"}`}>
+      <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black via-black/80 to-transparent">
+        <span className="font-medium truncate text-white text-sm block">
           {file.name}
         </span>
-        <span className={`text-xs ${viewMode === "grid" ? "text-gray-300" : "text-gray-500 dark:text-gray-400"}`}>
-          Starred {format(new Date(file.updatedAt || file.createdAt), "MMM d, yyyy")}
+        <span className="text-xs text-gray-300 block mt-1">
+          {format(new Date(file.updatedAt || file.createdAt), "MMM d, yyyy")}
         </span>
       </div>
 
       {/* Unstar Action */}
-      {(showActions || viewMode === "list") && (
-        <div className={`
-          absolute right-2 flex items-center space-x-1
-          ${viewMode === "grid" 
-            ? "top-2 opacity-0 group-hover:opacity-100 transition-opacity" 
-            : "top-1/2 transform -translate-y-1/2"}
-        `}>
+      {showActions && (
+        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
             onClick={() => onUnstar(file.id)}
             className="p-1 rounded-full bg-red-600 bg-opacity-80 hover:bg-opacity-100 transition-colors"

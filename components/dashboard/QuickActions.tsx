@@ -5,7 +5,7 @@ import { Upload, FolderPlus, Plus, Sparkles } from "lucide-react";
 import { Button } from "@heroui/button";
 import { addToast } from "@heroui/toast";
 import axios from "axios";
-
+import { useRouter } from "next/navigation";
 interface QuickActionsProps {
   userId: string;
   currentFolderId: string | null;
@@ -203,6 +203,12 @@ export default function QuickActions({
       });
     }
   };
+  const router = useRouter();
+
+
+  const handleAIChatNavigation = () => {
+    router.push('/dashboard/chatbot');
+  };
 
   return (
     <div className="p-6">
@@ -278,21 +284,22 @@ export default function QuickActions({
           </div>
         </div>
 
-        {/* AI Magic Card (placeholder) */}
-        <div
-          className="group dark:bg-[#1D1D1D] rounded-2xl border dark:border-white/10  p-6 cursor-pointer transition-all duration-200 hover:border-gray-300 hover:shadow-lg"
-          onClick={() => console.log('AI features coming soon!')}
-        >
-          <div className="flex flex-col items-center text-center space-y-3">
-            <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center group-hover:bg-purple-50 transition-colors">
-              <Sparkles className="w-6 h-6 text-gray-600 group-hover:text-purple-600 transition-colors" />
-            </div>
-            <div>
-              <h3 className="font-medium dark:text-gray-200 mb-1">AI Magic</h3>
-              <p className="text-sm dark:text-gray-400">Smart file actions</p>
-            </div>
-          </div>
-        </div>
+        {/* AI Card (placeholder) */}
+        
+<div
+  className="group dark:bg-[#1D1D1D] rounded-2xl border dark:border-white/10  p-6 cursor-pointer transition-all duration-200 hover:border-gray-300 hover:shadow-lg"
+  onClick={handleAIChatNavigation}
+>
+  <div className="flex flex-col items-center text-center space-y-3">
+    <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center group-hover:bg-purple-50 transition-colors">
+      <Sparkles className="w-6 h-6 text-gray-600 group-hover:text-purple-600 transition-colors" />
+    </div>
+    <div>
+      <h3 className="font-medium dark:text-gray-200 mb-1">Chat with AI </h3>
+      <p className="text-sm dark:text-gray-400">Smart file actions</p>
+    </div>
+  </div>
+</div>
       </div>
 
       {/* Alternative: Horizontal Layout (uncomment to use instead) */}

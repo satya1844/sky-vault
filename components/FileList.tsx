@@ -727,7 +727,7 @@ export default function FileList({
   return (
     <div className="bg-background min-h-screen">
       {/* Header Section */}
-      <div className="border-b border-gray-200 bg-background sticky top-0 z-10">
+      <div className="border-b border-gray-200 bg-[#020108] sticky top-0 z-10">
         <div className="px-6 py-4">
           {/* Tabs for filtering files */}
           <div className="flex space-x-1 dark:bg-[#1D1D1D] rounded-lg p-1 w-fit">
@@ -943,10 +943,10 @@ export default function FileList({
           </div>
         ) : (
           // List View - Dropbox style
-          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+          <div className=" rounded-lg  overflow-hidden text-white">
             {/* Table Header */}
-            <div className="bg-gray-50 border-b border-gray-200 px-4 py-3">
-              <div className="flex items-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <div className="bg-[#1d1d1d] border-b border-white/10 px-4 py-3">
+              <div className="flex items-center text-xs font-medium text-white uppercase tracking-wider">
                 <div className="flex-1">Name</div>
                 <div className="w-32 text-right">Modified</div>
                 <div className="w-24 text-right">Size</div>
@@ -955,14 +955,14 @@ export default function FileList({
             </div>
 
             {/* File List */}
-            <div className="divide-y divide-gray-100">
+            <div className="divide-y divide-white/10">
               {filteredFiles.map((file) => {
                 const thumbnailUrl = getThumbnailUrl(file);
 
                 return (
                   <div
                     key={file.id}
-                    className="group flex items-center px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors"
+                    className="group flex items-center px-4 py-3 hover:border hover:border-white/80 cursor-pointer transition-colors"
                     onClick={() => handleItemClick(file)}
                   >
                     {/* File Icon/Thumbnail and Name */}
@@ -984,7 +984,7 @@ export default function FileList({
                       </div>
 
                       <div className="flex items-center min-w-0 flex-1">
-                        <span className="font-medium text-gray-900 truncate" title={file.name}>
+                        <span className="font-medium text-white truncate" title={file.name}>
                           {file.name}
                         </span>
                         {file.isStarred && (

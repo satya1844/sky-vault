@@ -1,10 +1,13 @@
 import React from 'react'
 import Topbar from '@/components/dashboard/Topbar'
-function files() {
+import FileList from '@/components/FileList'
+import { auth } from "@clerk/nextjs/server";
+async function files() {
+  const { userId } = await auth();
   return (
     <div>
       <Topbar />
-      files
+      <FileList userId={userId} />
     </div>
   )
 }
