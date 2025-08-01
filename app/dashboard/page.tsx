@@ -1,6 +1,7 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import DashboardContent from "@/components/DashboardContent";
+import DashboardWrapper from "@/components/dashboard/DashboardWrapper";
 
 export default async function Dashboard() {
   const { userId } = await auth();
@@ -10,7 +11,6 @@ export default async function Dashboard() {
     redirect("/sign-in");
   }
 
-  // Serialize the user data to avoid passing the Clerk User object directly
   const serializedUser = user ? {
     id: user.id,
     firstName: user.firstName,
@@ -20,5 +20,9 @@ export default async function Dashboard() {
     emailAddress: user.emailAddresses?.[0]?.emailAddress
   } : undefined;
 
-  return <DashboardContent user={serializedUser} />;
+  return (
+    <DashboardWrapper user={serializedUser}>
+      <DashboardContent user={serializedUser} />
+    </DashboardWrapper>
+  );
 }

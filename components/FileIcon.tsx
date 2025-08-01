@@ -6,7 +6,6 @@ import type { File as FileType } from "@/lib/db/schema";
 
 interface FileIconProps {
   file: FileType;
-  type: string;
 }
 
 export default function FileIcon({ file }: FileIconProps) {

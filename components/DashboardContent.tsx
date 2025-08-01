@@ -71,11 +71,7 @@ const DashboardContent: React.FC<DashboardProps> = ({ user }) => {
   return (
     <div className="min-h-screen">
       {/* Topbar with search */}
-      <Topbar
-        user={user}
-        files={files}
-        onSearch={(query) => setSearchQuery(query)}
-      />
+      {/* Remove <Topbar ... /> usage from this file */}
 
       {/* Action buttons: Upload, Create Folder */}
       <QuickActions

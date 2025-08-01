@@ -222,23 +222,76 @@ export default function QuickActions({
         accept="*/*"
       />
 
-      {/* Show current location */}
-      {/* {currentFolderId && currentFolderPath.length > 0 && (
-        <div className="mb-6 p-3 bg-blue-50 rounded-lg border border-blue-200">
-          <p className="text-sm text-blue-800">
-            <span className="font-medium">Current location:</span>{' '}
-            {currentFolderPath.map(folder => folder.name).join(' > ')}
-          </p>
-        </div>
-      )} */}
-
-      {/* Modern Action Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      {/* Responsive Quick Actions */}
+      {/* Mobile: horizontal scrollable row */}
+      <div className="flex gap-3 z-0 overflow-x-auto pb-2 sm:hidden">
         {/* Upload Card */}
         <div
-          className={`group relative dark:bg-[#1D1D1D] rounded-2xl border dark:border-white/10  p-6 cursor-pointer transition-all duration-200 hover:border-gray-300 hover:shadow-lg ${
-            isUploading ? 'pointer-events-none opacity-60' : ''
-          }`}
+          className={`min-w-[140px] max-w-[160px] flex-shrink-0 group relative dark:bg-[#1D1D1D] rounded-xl border dark:border-white/10 p-3 cursor-pointer transition-all duration-200 hover:border-gray-300 hover:shadow-lg ${isUploading ? 'pointer-events-none opacity-60' : ''}`}
+          onClick={() => !isUploading && fileInputRef.current?.click()}
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+        >
+          <div className="flex flex-col items-center text-center space-y-2">
+            <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center group-hover:bg-blue-50 transition-colors">
+              <Upload className="w-5 h-5 text-gray-600 group-hover:text-blue-600 transition-colors" />
+            </div>
+            <div>
+              <h3 className="font-medium dark:text-gray-200 mb-0.5 text-sm">
+                {isUploading ? 'Uploading...' : 'Upload'}
+              </h3>
+              <p className="text-xs text-gray-500">
+                {isUploading ? `${Math.round(uploadProgress)}%` : 'Add files'}
+              </p>
+            </div>
+          </div>
+          {/* Upload Progress */}
+          {isUploading && (
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-200 rounded-b-xl overflow-hidden">
+              <div
+                className="h-full bg-blue-600 transition-all duration-300"
+                style={{ width: `${uploadProgress}%` }}
+              />
+            </div>
+          )}
+        </div>
+        {/* Create Folder Card */}
+        <div
+          className="min-w-[140px] max-w-[160px] flex-shrink-0 group dark:bg-[#1D1D1D] rounded-xl border dark:border-white/10 p-3 cursor-pointer transition-all duration-200 hover:border-gray-300 hover:shadow-lg"
+          onClick={handleCreateFolder}
+        >
+          <div className="flex flex-col items-center text-center space-y-2">
+            <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center group-hover:bg-yellow-50 transition-colors">
+              <FolderPlus className="w-5 h-5 text-gray-600 group-hover:text-yellow-600 transition-colors" />
+            </div>
+            <div>
+              <h3 className="font-medium dark:text-gray-200 mb-0.5 text-sm">Folder</h3>
+              <p className="text-xs dark:text-gray-400">Organize</p>
+            </div>
+          </div>
+        </div>
+        {/* AI Card */}
+        <div
+          className="min-w-[140px] max-w-[160px] flex-shrink-0 group dark:bg-[#1D1D1D] rounded-xl border dark:border-white/10 p-3 cursor-pointer transition-all duration-200 hover:border-gray-300 hover:shadow-lg"
+          onClick={handleAIChatNavigation}
+        >
+          <div className="flex flex-col items-center text-center space-y-2">
+            <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center group-hover:bg-purple-50 transition-colors">
+              <Sparkles className="w-5 h-5 text-gray-600 group-hover:text-purple-600 transition-colors" />
+            </div>
+            <div>
+              <h3 className="font-medium dark:text-gray-200 mb-0.5 text-sm">AI</h3>
+              <p className="text-xs dark:text-gray-400">Smart</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Tablet/Desktop: grid layout */}
+      <div className="hidden sm:grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {/* Upload Card */}
+        <div
+          className={`group relative dark:bg-[#1D1D1D] rounded-2xl border dark:border-white/10  p-6 cursor-pointer transition-all duration-200 hover:border-gray-300 hover:shadow-lg ${isUploading ? 'pointer-events-none opacity-60' : ''}`}
           onClick={() => !isUploading && fileInputRef.current?.click()}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
@@ -256,7 +309,6 @@ export default function QuickActions({
               </p>
             </div>
           </div>
-          
           {/* Upload Progress */}
           {isUploading && (
             <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-200 rounded-b-2xl overflow-hidden">
@@ -267,7 +319,6 @@ export default function QuickActions({
             </div>
           )}
         </div>
-
         {/* Create Folder Card */}
         <div
           className="group dark:bg-[#1D1D1D] rounded-2xl border dark:border-white/10 p-6 cursor-pointer transition-all duration-200 hover:border-gray-300 hover:shadow-lg"
@@ -283,27 +334,22 @@ export default function QuickActions({
             </div>
           </div>
         </div>
-
-        {/* AI Card (placeholder) */}
-        
-<div
-  className="group dark:bg-[#1D1D1D] rounded-2xl border dark:border-white/10  p-6 cursor-pointer transition-all duration-200 hover:border-gray-300 hover:shadow-lg"
-  onClick={handleAIChatNavigation}
->
-  <div className="flex flex-col items-center text-center space-y-3">
-    <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center group-hover:bg-purple-50 transition-colors">
-      <Sparkles className="w-6 h-6 text-gray-600 group-hover:text-purple-600 transition-colors" />
-    </div>
-    <div>
-      <h3 className="font-medium dark:text-gray-200 mb-1">Chat with AI </h3>
-      <p className="text-sm dark:text-gray-400">Smart file actions</p>
-    </div>
-  </div>
-</div>
+        {/* AI Card */}
+        <div
+          className="group dark:bg-[#1D1D1D] rounded-2xl border dark:border-white/10  p-6 cursor-pointer transition-all duration-200 hover:border-gray-300 hover:shadow-lg"
+          onClick={handleAIChatNavigation}
+        >
+          <div className="flex flex-col items-center text-center space-y-3">
+            <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center group-hover:bg-purple-50 transition-colors">
+              <Sparkles className="w-6 h-6 text-gray-600 group-hover:text-purple-600 transition-colors" />
+            </div>
+            <div>
+              <h3 className="font-medium dark:text-gray-200 mb-1">Chat with AI </h3>
+              <p className="text-sm dark:text-gray-400">Smart file actions</p>
+            </div>
+          </div>
+        </div>
       </div>
-
-      {/* Alternative: Horizontal Layout (uncomment to use instead) */}
-     
     </div>
   );
 }

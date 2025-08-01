@@ -59,9 +59,9 @@ export default function UserProfile() {
   if (!isLoaded) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col justify-center items-center p-4">
-        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20">
+        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 md:p-8 border border-white/20">
           <Spinner size="lg" color="primary" />
-          <p className="mt-4 text-white/80 text-center">Loading your profile...</p>
+          <p className="mt-4 text-white/80 text-center text-sm md:text-base">Loading your profile...</p>
         </div>
       </div>
     );
@@ -70,22 +70,22 @@ export default function UserProfile() {
   if (!isSignedIn) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col justify-center items-center p-4">
-        <Card className="max-w-md w-full bg-white/10 backdrop-blur-md border border-white/20 shadow-2xl">
-          <CardHeader className="flex gap-3 pb-6">
-            <div className="p-3 bg-blue-500/20 rounded-full">
-              <User className="h-6 w-6 text-blue-400" />
+        <Card className="max-w-sm md:max-w-md w-full bg-white/10 backdrop-blur-md border border-white/20 shadow-2xl">
+          <CardHeader className="flex gap-3 pb-4 md:pb-6">
+            <div className="p-2 md:p-3 bg-blue-500/20 rounded-full">
+              <User className="h-5 w-5 md:h-6 md:w-6 text-blue-400" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-white">Welcome</h2>
-              <p className="text-white/60">Access your profile</p>
+              <h2 className="text-lg md:text-xl font-bold text-white">Welcome</h2>
+              <p className="text-white/60 text-sm md:text-base">Access your profile</p>
             </div>
           </CardHeader>
-          <CardBody className="text-center py-8">
-            <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6">
-              <User className="h-10 w-10 text-white" />
+          <CardBody className="text-center py-6 md:py-8">
+            <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4 md:mb-6">
+              <User className="h-8 w-8 md:h-10 md:w-10 text-white" />
             </div>
-            <h3 className="text-lg font-semibold text-white mb-2">Not Signed In</h3>
-            <p className="text-white/60 mb-6">
+            <h3 className="text-base md:text-lg font-semibold text-white mb-2">Not Signed In</h3>
+            <p className="text-white/60 mb-4 md:mb-6 text-sm md:text-base">
               Please sign in to access your profile and features
             </p>
             <Button
@@ -104,46 +104,26 @@ export default function UserProfile() {
     );
   }
 
-  const fullName = `${user.firstName || ""} ${user.lastName || ""}`.trim();
-  const email = user.primaryEmailAddress?.emailAddress || "";
-  const initials = fullName
-    .split(" ")
-    .map((name) => name[0])
-    .join("")
-    .toUpperCase();
-
-  const userRole = user.publicMetadata.role as string | undefined;
-  const joinDate = user.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { 
-    year: 'numeric', 
-    month: 'long' 
-  }) : null;
-
   const handleSignOut = async () => {
     setIsSigningOut(true);
     try {
-      // Optional: Make API call to backend for additional cleanup
-      // await axios.post('/api/auth/signout', { userId: user.id });
-      
-      signOut(() => {
-        router.push("/");
-      });
+      await signOut();
+      router.push("/");
     } catch (error) {
       console.error("Error during sign out:", error);
-      // Still proceed with Clerk signout even if API fails
-      signOut(() => {
-        router.push("/");
-      });
     } finally {
       setIsSigningOut(false);
     }
   };
 
   const handleEditProfile = () => {
-    router.push("/dashboard/profile/edit");
+    // Implement profile editing functionality
+    console.log("Edit profile clicked");
   };
 
   const handleAccountSettings = () => {
-    router.push("/dashboard/settings");
+    // Implement account settings functionality
+    console.log("Account settings clicked");
   };
 
   const handleGoToDashboard = () => {
@@ -151,187 +131,204 @@ export default function UserProfile() {
   };
 
   return (
-    <div className="min-h-screen bg-[#020108] relative overflow-hidden ">
-      {/* Background decorative elements */}
-      
-
-      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen p-4 rounded-2xl">
-        {/* Main Profile Card */}
-        <Card className="w-3/4 max-w-lg bg-[#1D1D1D] h-full rounded-2xl shadow-lg border border-white/10">
-          {/* Header with background gradient */}
-          <div className="relative bg-gradient-to-r from-blue-600 to-purple-600 p-8 rounded-2xl">
-            <div className="absolute top-4 right-4">
-              <Button
-                isIconOnly
-                variant="flat"
-                onClick={handleAccountSettings}
-                className="bg-white/20 hover:bg-white/30 transition-colors duration-200"
-                aria-label="Account Settings"
-              >
-                <Settings className="h-4 w-4 text-white" />
-              </Button>
-            </div>
-            
-            {/* Profile Avatar - overlapping design */}
-            <div className="flex flex-col items-center">
-              <div className="relative">
-                {user.imageUrl ? (
-                  <Avatar
-                    src={user.imageUrl}
-                    alt={fullName}
-                    className="w-24 h-24 border-4 border-white shadow-xl"
-                  />
-                ) : (
-                  <div className="w-24 h-24 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center border-4 border-white shadow-xl">
-                    <span className="text-white text-2xl font-bold">{initials}</span>
-                  </div>
-                )}
-                <Button
-                  isIconOnly
-                  size="sm"
-                  variant="solid"
-                  onClick={handleEditProfile}
-                  className="absolute -bottom-2 -right-2 bg-white text-gray-700 hover:bg-gray-100 shadow-lg"
-                  aria-label="Edit profile"
-                >
-                  <Edit className="h-3 w-3" />
-                </Button>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 md:p-6">
+      <div className="max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="mb-6 md:mb-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3 md:space-x-4">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-500 rounded-full flex items-center justify-center">
+                <User className="h-5 w-5 md:h-6 md:w-6 text-white" />
               </div>
-              
-              <div className="text-center mt-4">
-                <h1 className="text-2xl font-bold text-white mb-1">{fullName || "User"}</h1>
-                {userRole && (
-                  <Badge
-                    color="secondary"
-                    variant="flat"
-                    className="bg-white/20 text-white border-white/30"
-                  >
-                    {userRole}
-                  </Badge>
-                )}
+              <div>
+                <h1 className="text-xl md:text-2xl font-bold text-white">Profile</h1>
+                <p className="text-white/60 text-sm md:text-base">Manage your account</p>
               </div>
             </div>
-          </div>
-
-          <CardBody className="p-6 space-y-6">
-            {/* Contact Information */}
-            <div className="space-y-4">
-              <div className="flex items-center space-x-3 p-3 bg-white/5 rounded-xl border border-white/10">
-                <div className="p-2 bg-blue-500/20 rounded-xl">
-                  <Mail className="h-4 w-4 text-blue-400" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-white/60 text-xs uppercase tracking-wide">Email</p>
-                  <p className="text-white font-medium">{email}</p>
-                </div>
-                <div className="flex items-center">
-                  <Badge
-                    color={
-                      user.emailAddresses?.[0]?.verification?.status === "verified"
-                        ? "success"
-                        : "warning"
-                    }
-                    variant="flat"
-                    className="text-xs"
-                  >
-                    {user.emailAddresses?.[0]?.verification?.status === "verified"
-                      ? "Verified"
-                      : "Pending"}
-                  </Badge>
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-3 p-3 bg-white/5 rounded-lg border border-white/10">
-                <div className="p-2 bg-green-500/20 rounded-lg">
-                  <Shield className="h-4 w-4 text-green-400" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-white/60 text-xs uppercase tracking-wide">Account Status</p>
-                  <p className="text-white font-medium">Active</p>
-                </div>
-                <div className="flex items-center">
-                  <Badge color="success" variant="flat" className="text-xs">
-                    Active
-                  </Badge>
-                </div>
-              </div>
-
-              {joinDate && (
-                <div className="flex items-center space-x-3 p-3 bg-white/5 rounded-lg border border-white/10">
-                  <div className="p-2 bg-purple-500/20 rounded-lg">
-                    <Calendar className="h-4 w-4 text-purple-400" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-white/60 text-xs uppercase tracking-wide">Member Since</p>
-                    <p className="text-white font-medium">{joinDate}</p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Quick Stats - Real Data */}
-            <div className="grid grid-cols-3 gap-4">
-              <div className="text-center p-3 bg-white/5 rounded-lg border border-white/10">
-                {isLoadingStats ? (
-                  <Spinner size="sm" color="primary" />
-                ) : (
-                  <div className="text-xl font-bold text-white">{userStats.fileCount}</div>
-                )}
-                <div className="text-white/60 text-xs">Files</div>
-              </div>
-              <div className="text-center p-3 bg-white/5 rounded-lg border border-white/10">
-                {isLoadingStats ? (
-                  <Spinner size="sm" color="primary" />
-                ) : (
-                  <div className="text-xl font-bold text-white">{userStats.totalStorage}</div>
-                )}
-                <div className="text-white/60 text-xs">Storage</div>
-              </div>
-              <div className="text-center p-3 bg-white/5 rounded-lg border border-white/10">
-                {isLoadingStats ? (
-                  <Spinner size="sm" color="primary" />
-                ) : (
-                  <div className="text-xl font-bold text-white">{userStats.sharedCount}</div>
-                )}
-                <div className="text-white/60 text-xs">Shared</div>
-              </div>
-            </div>
-          </CardBody>
-
-          <Divider className="border-white/10" />
-          
-          <CardFooter className="p-6">
             <Button
               variant="flat"
               color="danger"
-              startContent={<LogOut className="h-4 w-4" />}
+              size="sm"
               onClick={handleSignOut}
               disabled={isSigningOut}
-              className="w-full bg-red-500/20 hover:bg-red-500/30 text-red-400 border-red-500/30 transition-all duration-200 disabled:opacity-50"
+              startContent={isSigningOut ? <Spinner size="sm" /> : <LogOut className="h-4 w-4" />}
+              className="text-xs md:text-sm"
             >
-              {isSigningOut ? "Signing Out..." : "Sign Out"}
+              {isSigningOut ? "Signing out..." : "Sign Out"}
             </Button>
-          </CardFooter>
-        </Card>
+          </div>
+        </div>
 
-        {/* Additional Actions */}
-        <div className="mt-6 flex space-x-4">
-          <Button
-            variant="flat"
-            onClick={handleAccountSettings}
-            className="bg-white/10 hover:bg-white/20 text-white border-white/20"
-            startContent={<Settings className="h-4 w-4" />}
-          >
-            Account Settings
-          </Button>
-          <Button
-            variant="flat"
-            onClick={handleGoToDashboard}
-            className="bg-white/10 hover:bg-white/20 text-white border-white/20"
-            startContent={<ArrowRight className="h-4 w-4" />}
-          >
-            Go to Dashboard
-          </Button>
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+          {/* Profile Card */}
+          <div className="md:col-span-1">
+            <Card className="bg-white/10 backdrop-blur-md border border-white/20 shadow-2xl">
+              <CardHeader className="text-center pb-4">
+                <Avatar
+                  src={user?.imageUrl}
+                  name={user?.fullName || user?.emailAddresses?.[0]?.emailAddress}
+                  className="w-20 h-20 md:w-24 md:h-24 mx-auto mb-4"
+                />
+                <div>
+                  <h2 className="text-lg md:text-xl font-bold text-white mb-1">
+                    {user?.fullName || "User"}
+                  </h2>
+                  <p className="text-white/60 text-sm md:text-base">
+                    {user?.emailAddresses?.[0]?.emailAddress}
+                  </p>
+                  <Badge 
+                    color="success" 
+                    variant="flat" 
+                    className="mt-2"
+                  >
+                    Active
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardBody className="pt-0">
+                <div className="space-y-3">
+                  <Button
+                    variant="flat"
+                    color="primary"
+                    size="sm"
+                    startContent={<Edit className="h-4 w-4" />}
+                    onClick={handleEditProfile}
+                    className="w-full"
+                  >
+                    Edit Profile
+                  </Button>
+                  <Button
+                    variant="flat"
+                    color="default"
+                    size="sm"
+                    startContent={<Settings className="h-4 w-4" />}
+                    onClick={handleAccountSettings}
+                    className="w-full"
+                  >
+                    Account Settings
+                  </Button>
+                </div>
+              </CardBody>
+            </Card>
+          </div>
+
+          {/* Stats and Info Cards */}
+          <div className="md:col-span-2 space-y-4 md:space-y-6">
+            {/* Stats Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
+              <Card className="bg-white/10 backdrop-blur-md border border-white/20">
+                <CardBody className="p-4 md:p-6 text-center">
+                  <div className="w-8 h-8 md:w-10 md:h-10 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-2 md:mb-3">
+                    <User className="h-4 w-4 md:h-5 md:w-5 text-blue-400" />
+                  </div>
+                  <h3 className="text-lg md:text-xl font-bold text-white">
+                    {isLoadingStats ? "..." : userStats.fileCount}
+                  </h3>
+                  <p className="text-white/60 text-xs md:text-sm">Files</p>
+                </CardBody>
+              </Card>
+
+              <Card className="bg-white/10 backdrop-blur-md border border-white/20">
+                <CardBody className="p-4 md:p-6 text-center">
+                  <div className="w-8 h-8 md:w-10 md:h-10 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-2 md:mb-3">
+                    <Shield className="h-4 w-4 md:h-5 md:w-5 text-green-400" />
+                  </div>
+                  <h3 className="text-lg md:text-xl font-bold text-white">
+                    {isLoadingStats ? "..." : userStats.totalStorage}
+                  </h3>
+                  <p className="text-white/60 text-xs md:text-sm">Storage Used</p>
+                </CardBody>
+              </Card>
+
+              <Card className="bg-white/10 backdrop-blur-md border border-white/20">
+                <CardBody className="p-4 md:p-6 text-center">
+                  <div className="w-8 h-8 md:w-10 md:h-10 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-2 md:mb-3">
+                    <Mail className="h-4 w-4 md:h-5 md:w-5 text-purple-400" />
+                  </div>
+                  <h3 className="text-lg md:text-xl font-bold text-white">
+                    {isLoadingStats ? "..." : userStats.sharedCount}
+                  </h3>
+                  <p className="text-white/60 text-xs md:text-sm">Shared</p>
+                </CardBody>
+              </Card>
+            </div>
+
+            {/* Account Info */}
+            <Card className="bg-white/10 backdrop-blur-md border border-white/20">
+              <CardHeader>
+                <h3 className="text-lg md:text-xl font-bold text-white">Account Information</h3>
+              </CardHeader>
+              <CardBody>
+                <div className="space-y-3 md:space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2 md:space-x-3">
+                      <Mail className="h-4 w-4 md:h-5 md:w-5 text-white/60" />
+                      <span className="text-white/80 text-sm md:text-base">Email</span>
+                    </div>
+                    <span className="text-white text-sm md:text-base">
+                      {user?.emailAddresses?.[0]?.emailAddress}
+                    </span>
+                  </div>
+                  
+                  <Divider className="bg-white/20" />
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2 md:space-x-3">
+                      <Calendar className="h-4 w-4 md:h-5 md:w-5 text-white/60" />
+                      <span className="text-white/80 text-sm md:text-base">Member Since</span>
+                    </div>
+                    <span className="text-white text-sm md:text-base">
+                      {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : "N/A"}
+                    </span>
+                  </div>
+                  
+                  <Divider className="bg-white/20" />
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2 md:space-x-3">
+                      <Shield className="h-4 w-4 md:h-5 md:w-5 text-white/60" />
+                      <span className="text-white/80 text-sm md:text-base">Status</span>
+                    </div>
+                    <Badge color="success" variant="flat" size="sm">
+                      Verified
+                    </Badge>
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
+
+            {/* Quick Actions */}
+            <Card className="bg-white/10 backdrop-blur-md border border-white/20">
+              <CardHeader>
+                <h3 className="text-lg md:text-xl font-bold text-white">Quick Actions</h3>
+              </CardHeader>
+              <CardBody>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+                  <Button
+                    variant="flat"
+                    color="primary"
+                    size="sm"
+                    onClick={handleGoToDashboard}
+                    startContent={<ArrowRight className="h-4 w-4" />}
+                    className="w-full"
+                  >
+                    Go to Dashboard
+                  </Button>
+                  <Button
+                    variant="flat"
+                    color="default"
+                    size="sm"
+                    onClick={handleAccountSettings}
+                    startContent={<Settings className="h-4 w-4" />}
+                    className="w-full"
+                  >
+                    Settings
+                  </Button>
+                </div>
+              </CardBody>
+            </Card>
+          </div>
         </div>
       </div>
     </div>

@@ -18,7 +18,7 @@ export default function Trash({ limit = 50 }: TrashProps) {
 
   const [files, setFiles] = useState<FileType[]>([]);
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<"grid" | "list">("list");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [showEmptyTrashModal, setShowEmptyTrashModal] = useState(false);
   const [emptyingTrash, setEmptyingTrash] = useState(false);
 
@@ -112,7 +112,7 @@ export default function Trash({ limit = 50 }: TrashProps) {
       console.error("Error restoring file:", error);
       addToast({
         title: "Error",
-        description: "Failed to restore file from trash.",
+        description: "Could not restore file.",
         color: "danger",
         classNames: {
     base: `
@@ -142,15 +142,11 @@ export default function Trash({ limit = 50 }: TrashProps) {
 
   const handleDeletePermanently = async (fileId: string) => {
     try {
-      const fileToDelete = files.find((f) => f.id === fileId);
-      const fileName = fileToDelete?.name || "File";
-
-      await axios.delete(`/api/files/${fileId}/delete`);
+      await axios.delete(`/api/files/${fileId}/trash`);
       setFiles(files => files.filter(file => file.id !== fileId));
-      
       addToast({
-        title: "File Permanently Deleted",
-        description: `"${fileName}" has been permanently removed.`,
+        title: "File Deleted",
+        description: "File has been permanently deleted.",
         color: "success",
         classNames: {
     base: `
@@ -176,10 +172,10 @@ export default function Trash({ limit = 50 }: TrashProps) {
   },
       });
     } catch (error) {
-      console.error("Error deleting file permanently:", error);
+      console.error("Error deleting file:", error);
       addToast({
         title: "Error",
-        description: "Failed to delete file permanently.",
+        description: "Could not delete file.",
         color: "danger",
         classNames: {
     base: `
@@ -208,22 +204,14 @@ export default function Trash({ limit = 50 }: TrashProps) {
   };
 
   const handleEmptyTrash = async () => {
-    if (files.length === 0) return;
-
     setEmptyingTrash(true);
     try {
-      // Delete all trashed files
-      const deletePromises = files.map(file => 
-        axios.delete(`/api/files/${file.id}/delete`)
-      );
-      
-      await Promise.all(deletePromises);
+      await axios.delete(`/api/files/empty-trash?userId=${userId}`);
       setFiles([]);
       setShowEmptyTrashModal(false);
-      
       addToast({
         title: "Trash Emptied",
-        description: `${files.length} files have been permanently deleted.`,
+        description: "All files have been permanently deleted.",
         color: "success",
         classNames: {
     base: `
@@ -252,7 +240,7 @@ export default function Trash({ limit = 50 }: TrashProps) {
       console.error("Error emptying trash:", error);
       addToast({
         title: "Error",
-        description: "Failed to empty trash. Some files may not have been deleted.",
+        description: "Could not empty trash.",
         color: "danger",
         classNames: {
     base: `
@@ -282,13 +270,29 @@ export default function Trash({ limit = 50 }: TrashProps) {
     }
   };
 
+  const formatFileSize = (bytes: number): string => {
+    if (!bytes) return "0 Bytes";
+    const units = ["Bytes", "KB", "MB", "GB"];
+    const index = Math.floor(Math.log(bytes) / Math.log(1024));
+    return `${(bytes / Math.pow(1024, index)).toFixed(1)} ${units[index]}`;
+  };
+
   if (loading) {
     return (
-      <div className="p-4 md:p-6">
-        <h2 className="text-xl font-semibold mb-4">Trash</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-          {[...Array(10)].map((_, index) => (
-            <div key={index} className="h-16 w-full rounded-lg bg-gray-200 animate-pulse" />
+      <div className="p-4 md:p-6 bg-gray-900 min-h-screen">
+        <h2 className="text-lg md:text-xl font-semibold mb-4 text-white">Trash</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-3 md:gap-4">
+          {Array.from({ length: 12 }).map((_, index) => (
+            <div
+              key={index}
+              className="bg-gray-800 rounded-lg md:rounded-xl shadow-sm p-3 md:p-4 animate-pulse aspect-square"
+            >
+              <div className="aspect-square rounded-lg mb-2 md:mb-3 bg-gray-700"></div>
+              <div className="space-y-1 md:space-y-2">
+                <div className="h-3 md:h-4 bg-gray-700 rounded w-3/4"></div>
+                <div className="h-2 md:h-3 bg-gray-700 rounded w-1/2"></div>
+              </div>
+            </div>
           ))}
         </div>
       </div>
@@ -296,97 +300,124 @@ export default function Trash({ limit = 50 }: TrashProps) {
   }
 
   return (
-    <div className="p-4 md:p-6">
-      <div className="flex justify-between items-center mb-4">
+    <div className="p-4 md:p-6 bg-gray-900 min-h-screen">
+      <div className="flex justify-between items-center mb-4 md:mb-6">
         <div className="flex items-center space-x-2">
-          <Trash2 className="w-6 h-6 text-gray-600" />
-          <h2 className="text-xl font-semibold">Trash</h2>
-          <span className="text-sm text-gray-500">({files.length} items)</span>
+          <Trash2 className="w-5 h-5 md:w-6 md:h-6 text-red-500" />
+          <h2 className="text-lg md:text-xl font-semibold text-white">Trash</h2>
+          <span className="text-xs md:text-sm text-gray-400">({files.length} items)</span>
         </div>
-        
-        <div className="flex items-center space-x-2">
-          {files.length > 0 && (
-            <button
-              onClick={() => setShowEmptyTrashModal(true)}
-              className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
-            >
-              Empty Trash
-            </button>
-          )}
+
+        <div className="flex items-center space-x-2 md:space-x-3">
           <button
             onClick={() => setViewMode("grid")}
-            className={`p-2 rounded ${viewMode === "grid" ? "bg-gray-200 dark:bg-gray-700" : ""}`}
+            className={`p-1.5 md:p-2 rounded ${viewMode === "grid" ? "bg-gray-700" : "bg-gray-800 hover:bg-gray-700"} transition-colors`}
             aria-label="Grid view"
           >
-            <Grid className="w-5 h-5" />
+            <Grid className="w-4 h-4 md:w-5 md:h-5 text-white" />
           </button>
           <button
             onClick={() => setViewMode("list")}
-            className={`p-2 rounded ${viewMode === "list" ? "bg-gray-200 dark:bg-gray-700" : ""}`}
+            className={`p-1.5 md:p-2 rounded ${viewMode === "list" ? "bg-gray-700" : "bg-gray-800 hover:bg-gray-700"} transition-colors`}
             aria-label="List view"
           >
-            <List className="w-5 h-5" />
+            <List className="w-4 h-4 md:w-5 md:h-5 text-white" />
           </button>
+          {files.length > 0 && (
+            <button
+              onClick={() => setShowEmptyTrashModal(true)}
+              className="p-1.5 md:p-2 bg-red-600 hover:bg-red-700 rounded transition-colors"
+              aria-label="Empty trash"
+            >
+              <Trash2 className="w-4 h-4 md:w-5 md:h-5 text-white" />
+            </button>
+          )}
         </div>
       </div>
 
       {files.length === 0 ? (
-        <div className="text-center py-12">
-          <Trash2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-600 mb-2">Trash is empty</h3>
-          <p className="text-gray-500">Deleted files will appear here.</p>
+        <div className="text-center py-8 md:py-12">
+          <Trash2 className="w-12 h-12 md:w-16 md:h-16 text-gray-600 mx-auto mb-3 md:mb-4" />
+          <h3 className="text-base md:text-lg font-medium text-gray-300 mb-2">Trash is Empty</h3>
+          <p className="text-sm md:text-base text-gray-500">Deleted files will appear here.</p>
         </div>
       ) : (
         <>
-          <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <div className="flex items-center space-x-2">
-              <AlertTriangle className="w-5 h-5 text-yellow-600" />
-              <p className="text-sm text-yellow-800">
-                Files in trash will be automatically deleted after 30 days.
-              </p>
+          {viewMode === "list" ? (
+            <div className="bg-background rounded-lg overflow-hidden">
+              {/* Table Header - Hidden on mobile */}
+              <div className="hidden md:grid grid-cols-12 gap-4 px-4 py-3 bg-background border-b border-gray-700">
+                <div className="col-span-6">
+                  <span className="text-sm font-medium text-gray-300 uppercase tracking-wide">NAME</span>
+                </div>
+                <div className="col-span-3">
+                  <span className="text-sm font-medium text-gray-300 uppercase tracking-wide">DELETED</span>
+                </div>
+                <div className="col-span-2">
+                  <span className="text-sm font-medium text-gray-300 uppercase tracking-wide">SIZE</span>
+                </div>
+                <div className="col-span-1"></div>
+              </div>
+              
+              {/* File List */}
+              <div className="divide-y divide-white/10">
+                {files.map(file => (
+                  <FileListItem
+                    key={file.id}
+                    file={file}
+                    onRestore={handleRestoreFile}
+                    onDelete={handleDeletePermanently}
+                    formatFileSize={formatFileSize}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
-          
-          <div className={viewMode === "grid" ? "grid-view" : "list-view"}>
-            {files.map((file) => (
-              <FileItem 
-                key={file.id} 
-                file={file} 
-                viewMode={viewMode}
-                onRestore={handleRestoreFile}
-                onDelete={handleDeletePermanently}
-              />
-            ))}
-          </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-3 md:gap-4">
+              {files.map(file => (
+                <FileGridItem
+                  key={file.id}
+                  file={file}
+                  onRestore={handleRestoreFile}
+                  onDelete={handleDeletePermanently}
+                />
+              ))}
+            </div>
+          )}
         </>
       )}
 
-      {/* Empty Trash Confirmation Modal */}
+      {/* Empty Trash Modal */}
       {showEmptyTrashModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-mx-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full">
             <div className="flex items-center space-x-3 mb-4">
               <AlertTriangle className="w-6 h-6 text-red-500" />
-              <h3 className="text-lg font-semibold">Empty Trash</h3>
+              <h3 className="text-lg font-semibold text-white">Empty Trash</h3>
             </div>
-            <p className="text-gray-600 dark:text-gray-300 mb-6">
-              Are you sure you want to permanently delete all {files.length} files in trash? 
-              This action cannot be undone.
+            <p className="text-gray-300 mb-6">
+              Are you sure you want to permanently delete all files in trash? This action cannot be undone.
             </p>
-            <div className="flex justify-end space-x-3">
+            <div className="flex space-x-3">
               <button
                 onClick={() => setShowEmptyTrashModal(false)}
-                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded transition-colors"
-                disabled={emptyingTrash}
+                className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded text-white transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleEmptyTrash}
                 disabled={emptyingTrash}
-                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors disabled:opacity-50"
+                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-800 rounded text-white transition-colors flex items-center justify-center"
               >
-                {emptyingTrash ? "Emptying..." : "Empty Trash"}
+                {emptyingTrash ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin mr-2" />
+                    Emptying...
+                  </>
+                ) : (
+                  "Empty Trash"
+                )}
               </button>
             </div>
           </div>
@@ -396,81 +427,137 @@ export default function Trash({ limit = 50 }: TrashProps) {
   );
 }
 
-interface FileItemProps {
+interface FileListItemProps {
   file: FileType;
-  viewMode: "grid" | "list";
   onRestore: (fileId: string) => void;
   onDelete: (fileId: string) => void;
+  formatFileSize: (bytes: number) => string;
 }
 
-function FileItem({ file, viewMode, onRestore, onDelete }: FileItemProps) {
+function FileListItem({ file, onRestore, onDelete, formatFileSize }: FileListItemProps) {
   const [showActions, setShowActions] = useState(false);
   const thumbnailUrl = getThumbnailUrl(file);
 
   return (
-    <div 
-      className={`
-        group relative rounded-lg overflow-hidden transition-all duration-200
-        ${viewMode === "grid" 
-          ? "aspect-square hover:shadow-lg" 
-          : "flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800"}
-      `}
+    <div
+      className="grid grid-cols-12 gap-2 md:gap-4 px-3 md:px-4 py-2 md:py-3 hover:bg-gray-750 transition-colors group"
+      onMouseEnter={() => setShowActions(true)}
+      onMouseLeave={() => setShowActions(false)}
+    >
+      {/* Name column with icon */}
+      <div className="col-span-8 md:col-span-6 flex items-center space-x-2 md:space-x-3 min-w-0">
+        <div className="flex-shrink-0 w-6 h-6 md:w-8 md:h-8 relative">
+          <Image
+            src={thumbnailUrl || '/placeholder-image.jpg'}
+            alt={file.name}
+            width={32}
+            height={32}
+            className="rounded object-cover"
+          />
+        </div>
+        <div className="flex items-center space-x-1 md:space-x-2 min-w-0 flex-1">
+          <span className="text-white font-medium truncate text-sm md:text-base">{file.name}</span>
+        </div>
+      </div>
+
+      {/* Deleted column - Hidden on mobile */}
+      <div className="hidden md:flex col-span-3 items-center">
+        <span className="text-gray-400 text-sm">
+          {format(new Date(file.updatedAt || file.createdAt), "MMM d, yyyy")}
+        </span>
+      </div>
+
+      {/* Size column - Hidden on mobile */}
+      <div className="hidden md:flex col-span-2 items-center">
+        <span className="text-gray-400 text-sm">
+          {file.size ? formatFileSize(file.size) : '--'}
+        </span>
+      </div>
+
+      {/* Actions column */}
+      <div className="col-span-4 md:col-span-1 flex items-center justify-end space-x-1 md:space-x-2">
+        {showActions && (
+          <>
+            <button
+              onClick={() => onRestore(file.id)}
+              className="p-1 md:p-1.5 rounded-full bg-green-600 hover:bg-green-700 transition-colors opacity-0 group-hover:opacity-100"
+              aria-label="Restore file"
+              title="Restore file"
+            >
+              <RefreshCw className="w-3 h-3 md:w-4 md:h-4 text-white" />
+            </button>
+            <button
+              onClick={() => onDelete(file.id)}
+              className="p-1 md:p-1.5 rounded-full bg-red-600 hover:bg-red-700 transition-colors opacity-0 group-hover:opacity-100"
+              aria-label="Delete permanently"
+              title="Delete permanently"
+            >
+              <X className="w-3 h-3 md:w-4 md:h-4 text-white" />
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+interface FileGridItemProps {
+  file: FileType;
+  onRestore: (fileId: string) => void;
+  onDelete: (fileId: string) => void;
+}
+
+function FileGridItem({ file, onRestore, onDelete }: FileGridItemProps) {
+  const [showActions, setShowActions] = useState(false);
+  const thumbnailUrl = getThumbnailUrl(file);
+
+  return (
+    <div
+      className="group relative aspect-square rounded-lg md:rounded-xl overflow-hidden bg-gray-800 hover:bg-gray-750 transition-all duration-200"
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
     >
       {/* Thumbnail */}
-      <div className={`
-        relative 
-        ${viewMode === "grid" ? "w-full h-full" : "w-10 h-10 mr-3 flex-shrink-0"}
-      `}>
+      <div className="w-full h-full relative">
         <Image
           src={thumbnailUrl || '/placeholder-image.jpg'}
           alt={file.name}
           fill
-          className="object-cover rounded opacity-75"
+          className="object-cover opacity-75"
         />
-        {/* Overlay to indicate trashed state */}
-        <div className="absolute inset-0 bg-gray-900 bg-opacity-20 flex items-center justify-center">
-          <Trash2 className="w-4 h-4 text-white opacity-70" />
+        <div className="absolute top-1 md:top-2 left-1 md:left-2">
+          <Trash2 className="w-3 h-3 md:w-4 md:h-4 text-red-400" />
         </div>
       </div>
 
       {/* File Info */}
-      <div className={`
-        flex flex-col justify-center
-        ${viewMode === "grid" ? "absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black to-transparent" : "flex-grow"}
-      `}>
-        <span className={`font-medium truncate ${viewMode === "grid" ? "text-white" : "text-gray-800 dark:text-white"}`}>
+      <div className="absolute bottom-0 left-0 right-0 p-2 md:p-3 bg-gradient-to-t from-black via-black/80 to-transparent">
+        <span className="font-medium truncate text-white text-xs md:text-sm block">
           {file.name}
         </span>
-        <span className={`text-xs ${viewMode === "grid" ? "text-gray-300" : "text-gray-500 dark:text-gray-400"}`}>
-          Deleted {format(new Date(file.updatedAt || file.createdAt), "MMM d, yyyy")}
+        <span className="text-[10px] md:text-xs text-gray-300 block mt-0.5 md:mt-1">
+          {format(new Date(file.updatedAt || file.createdAt), "MMM d, yyyy")}
         </span>
       </div>
 
       {/* Actions */}
-      {(showActions || viewMode === "list") && (
-        <div className={`
-          absolute right-2 flex items-center space-x-1
-          ${viewMode === "grid" 
-            ? "top-2 opacity-0 group-hover:opacity-100 transition-opacity" 
-            : "top-1/2 transform -translate-y-1/2"}
-        `}>
+      {showActions && (
+        <div className="absolute top-1 md:top-2 right-1 md:right-2 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1">
           <button
             onClick={() => onRestore(file.id)}
-            className="p-1 rounded-full bg-green-600 bg-opacity-80 hover:bg-opacity-100 transition-colors"
+            className="p-1 md:p-1.5 rounded-full bg-green-600 bg-opacity-80 hover:bg-opacity-100 transition-colors"
             aria-label="Restore file"
             title="Restore file"
           >
-            <RefreshCw className="w-4 h-4 text-white" />
+            <RefreshCw className="w-3 h-3 md:w-4 md:h-4 text-white" />
           </button>
           <button
             onClick={() => onDelete(file.id)}
-            className="p-1 rounded-full bg-red-600 bg-opacity-80 hover:bg-opacity-100 transition-colors"
+            className="p-1 md:p-1.5 rounded-full bg-red-600 bg-opacity-80 hover:bg-opacity-100 transition-colors"
             aria-label="Delete permanently"
             title="Delete permanently"
           >
-            <X className="w-4 h-4 text-white" />
+            <X className="w-3 h-3 md:w-4 md:h-4 text-white" />
           </button>
         </div>
       )}
@@ -479,23 +566,23 @@ function FileItem({ file, viewMode, onRestore, onDelete }: FileItemProps) {
 }
 
 function getThumbnailUrl(file: FileType): string {
-  if (file.type.startsWith('image/')) {
+  if (file.type.startsWith("image/")) {
     return `${process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT}/tr:w-200,h-200,fo-auto/${file.path}`;
   }
-  // Return default icons for other file types
+
   switch (file.type) {
-    case 'application/pdf':
-      return '/icons/pdf.png';
-    case 'application/msword':
-    case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
-      return '/icons/doc.png';
-    case 'application/vnd.ms-excel':
-    case 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
-      return '/icons/xls.png';
-    case 'application/vnd.ms-powerpoint':
-    case 'application/vnd.openxmlformats-officedocument.presentationml.presentation':
-      return '/icons/ppt.png';
+    case "application/pdf":
+      return "/icons/pdf.png";
+    case "application/msword":
+    case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+      return "/icons/doc.png";
+    case "application/vnd.ms-excel":
+    case "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+      return "/icons/xls.png";
+    case "application/vnd.ms-powerpoint":
+    case "application/vnd.openxmlformats-officedocument.presentationml.presentation":
+      return "/icons/ppt.png";
     default:
-      return '/icons/file.png';
+      return "/icons/file.png";
   }
 }
