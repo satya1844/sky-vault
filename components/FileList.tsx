@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
-import { Folder, Star, Trash, X, ExternalLink, StarIcon, EyeClosed, Filter, Grid, List } from "lucide-react";
+import { Folder, Star, Trash, X, ExternalLink, StarIcon, EyeClosed, Filter, Grid, List, MoreVertical } from "lucide-react";
 import { Input } from "@heroui/input";
 import { Button } from "@heroui/button";
 import { Tooltip } from "@heroui/tooltip";
@@ -76,6 +76,7 @@ export default function FileList({
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [emptyTrashModalOpen, setEmptyTrashModalOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<FileType | null>(null);
+  const [activeMobileMenuId, setActiveMobileMenuId] = useState<string | null>(null);
 
   // Fetch files
   const fetchFiles = useCallback(async () => {
@@ -109,6 +110,15 @@ export default function FileList({
   useEffect(() => {
     fetchFiles();
   }, [fetchFiles, externalRefreshTrigger]);
+
+  // Close mobile menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setActiveMobileMenuId(null);
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
 
   // Common toast styles
   const toastClassNames = {
@@ -920,58 +930,130 @@ export default function FileList({
 
                   {/* Hover actions */}
                   <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 z-10">
-                    {!file.isFolder && (
-                      <Tooltip content="Download">
+                    {/* Desktop hover actions */}
+                    <div className="hidden md:flex gap-1">
+                      {!file.isFolder && (
+                        <Tooltip content="Download">
+                          <button
+                            className="p-1.5 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors pointer-events-auto"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDownloadFile(file);
+                            }}
+                          >
+                            <ExternalLink className="w-3.5 h-3.5 text-gray-600" />
+                          </button>
+                        </Tooltip>
+                      )}
+                      <Tooltip content={file.isStarred ? "Remove from starred" : "Add to starred"}>
                         <button
                           className="p-1.5 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors pointer-events-auto"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleDownloadFile(file);
+                            handleStarFile(file.id);
                           }}
                         >
-                          <ExternalLink className="w-3.5 h-3.5 text-gray-600" />
+                          <Star
+                            className={`w-3.5 h-3.5 ${file.isStarred ? 'text-yellow-500 fill-current' : 'text-gray-600'}`}
+                          />
                         </button>
                       </Tooltip>
-                    )}
-                    <Tooltip content={file.isStarred ? "Remove from starred" : "Add to starred"}>
+                      <Tooltip content={file.isTrashed ? "Restore" : "Move to trash"}>
+                        <button
+                          className="p-1.5 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors pointer-events-auto"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleTrashFile(file.id);
+                          }}
+                        >
+                          <Trash className="w-3.5 h-3.5 text-gray-600" />
+                        </button>
+                      </Tooltip>
+                      {activeTab === "trash" && (
+                        <Tooltip content="Delete permanently">
+                          <button
+                            className="p-1.5 bg-white rounded-full shadow-md hover:bg-red-50 transition-colors pointer-events-auto"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedFile(file);
+                              setDeleteModalOpen(true);
+                            }}
+                          >
+                            <X className="w-3.5 h-3.5 text-red-600" />
+                          </button>
+                        </Tooltip>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Mobile actions button - always visible on mobile */}
+                  <div className="md:hidden absolute top-2 right-2 z-20">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveMobileMenuId(activeMobileMenuId === file.id ? null : file.id);
+                      }}
+                      className="p-1.5 bg-black/50 rounded-full backdrop-blur-sm border border-white/20"
+                      aria-label="More actions"
+                    >
+                      <MoreVertical className="w-3 h-3 text-white" />
+                    </button>
+                  </div>
+
+                  {/* Mobile actions menu */}
+                  {activeMobileMenuId === file.id && (
+                    <div className="md:hidden absolute top-10 right-2 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-30 min-w-[120px]">
+                      {!file.isFolder && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDownloadFile(file);
+                            setActiveMobileMenuId(null);
+                          }}
+                          className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                          <span>Download</span>
+                        </button>
+                      )}
                       <button
-                        className="p-1.5 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors pointer-events-auto"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleStarFile(file.id);
+                          setActiveMobileMenuId(null);
                         }}
+                        className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
                       >
-                        <Star
-                          className={`w-3.5 h-3.5 ${file.isStarred ? 'text-yellow-500 fill-current' : 'text-gray-600'}`}
-                        />
+                        <Star className={`w-4 h-4 ${file.isStarred ? 'text-yellow-500 fill-current' : ''}`} />
+                        <span>{file.isStarred ? 'Unstar' : 'Star'}</span>
                       </button>
-                    </Tooltip>
-                    <Tooltip content={file.isTrashed ? "Restore" : "Move to trash"}>
                       <button
-                        className="p-1.5 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors pointer-events-auto"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleTrashFile(file.id);
+                          setActiveMobileMenuId(null);
                         }}
+                        className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
                       >
-                        <Trash className="w-3.5 h-3.5 text-gray-600" />
+                        <Trash className="w-4 h-4" />
+                        <span>{file.isTrashed ? 'Restore' : 'Move to trash'}</span>
                       </button>
-                    </Tooltip>
-                    {activeTab === "trash" && (
-                      <Tooltip content="Delete permanently">
+                      {activeTab === "trash" && (
                         <button
-                          className="p-1.5 bg-white rounded-full shadow-md hover:bg-red-50 transition-colors pointer-events-auto"
                           onClick={(e) => {
                             e.stopPropagation();
                             setSelectedFile(file);
                             setDeleteModalOpen(true);
+                            setActiveMobileMenuId(null);
                           }}
+                          className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
                         >
-                          <X className="w-3.5 h-3.5 text-red-600" />
+                          <X className="w-4 h-4" />
+                          <span>Delete permanently</span>
                         </button>
-                      </Tooltip>
-                    )}
-                  </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Star icon on top left */}
                   {file.isStarred && (

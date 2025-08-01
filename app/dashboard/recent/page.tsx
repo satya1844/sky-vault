@@ -4,7 +4,7 @@ import axios from "axios";
 import { addToast } from "@heroui/toast";
 import { format } from "date-fns";
 import { useUser } from "@clerk/nextjs";
-import { Grid, List, Star, Trash, Download, Folder } from "lucide-react";
+import { Grid, List, Star, Trash, Download, Folder, MoreVertical } from "lucide-react";
 import Image from "next/image";
 import type { File as FileType } from "@/lib/db/schema";
 
@@ -85,6 +85,16 @@ export default function Recents({ limit = 20 }: RecentsProps) {
   const [recentFiles, setRecentFiles] = useState<FileType[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+
+  // Close mobile menus when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      // Reset all mobile menu states
+      setRecentFiles(files => files.map(f => ({ ...f, showMobileMenu: false })));
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
 
   const fetchRecentFiles = useCallback(async () => {
     if (!userId) {
@@ -599,6 +609,7 @@ interface FileListItemProps {
 
 function FileListItem({ file, onStar, onTrash, onDownload, onItemClick, formatFileSize }: FileListItemProps) {
   const [showActions, setShowActions] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const thumbnailUrl = getThumbnailUrl(file);
 
   return (
@@ -646,9 +657,10 @@ function FileListItem({ file, onStar, onTrash, onDownload, onItemClick, formatFi
       </div>
 
       {/* Actions column */}
-      <div className="col-span-4 md:col-span-1 flex items-center justify-end space-x-1 md:space-x-2">
+      <div className="col-span-4 md:col-span-1 flex items-center justify-end space-x-1 md:space-x-2 relative">
+        {/* Desktop hover actions */}
         {showActions && (
-          <>
+          <div className="hidden md:flex space-x-1">
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -682,7 +694,60 @@ function FileListItem({ file, onStar, onTrash, onDownload, onItemClick, formatFi
             >
               <Trash className="w-4 h-4" />
             </button>
-          </>
+          </div>
+        )}
+
+        {/* Mobile actions button */}
+        <div className="md:hidden">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowMobileMenu(!showMobileMenu);
+            }}
+            className="p-1.5 text-gray-400 hover:text-white rounded transition-colors"
+            aria-label="More actions"
+          >
+            <MoreVertical className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Mobile actions menu */}
+        {showMobileMenu && (
+          <div className="md:hidden absolute top-8 right-0 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-30 min-w-[120px]">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDownload(file);
+                setShowMobileMenu(false);
+              }}
+              className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+            >
+              <Download className="w-4 h-4" />
+              <span>Download</span>
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onStar(file.id);
+                setShowMobileMenu(false);
+              }}
+              className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+            >
+              <Star className={`w-4 h-4 ${file.isStarred ? 'text-yellow-500 fill-current' : ''}`} />
+              <span>{file.isStarred ? 'Unstar' : 'Star'}</span>
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onTrash(file.id);
+                setShowMobileMenu(false);
+              }}
+              className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+            >
+              <Trash className="w-4 h-4" />
+              <span>Move to trash</span>
+            </button>
+          </div>
         )}
       </div>
     </div>
@@ -699,6 +764,7 @@ interface FileGridItemProps {
 
 function FileGridItem({ file, onStar, onTrash, onDownload, onItemClick }: FileGridItemProps) {
   const [showActions, setShowActions] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const thumbnailUrl = getThumbnailUrl(file);
 
   return (
@@ -741,8 +807,9 @@ function FileGridItem({ file, onStar, onTrash, onDownload, onItemClick }: FileGr
       </div>
 
       {/* Actions */}
+      {/* Desktop hover actions */}
       {showActions && (
-        <div className="absolute top-1 md:top-2 right-1 md:right-2 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1">
+        <div className="hidden md:flex absolute top-1 md:top-2 right-1 md:right-2 opacity-0 group-hover:opacity-100 transition-opacity space-x-1">
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -775,6 +842,59 @@ function FileGridItem({ file, onStar, onTrash, onDownload, onItemClick }: FileGr
             title="Move to trash"
           >
             <Trash className="w-3.5 h-3.5 text-gray-600" />
+          </button>
+        </div>
+      )}
+
+      {/* Mobile actions button - always visible on mobile */}
+      <div className="md:hidden absolute top-1 right-1 z-20">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowMobileMenu(!showMobileMenu);
+          }}
+          className="p-1.5 bg-black/50 rounded-full backdrop-blur-sm border border-white/20"
+          aria-label="More actions"
+        >
+          <MoreVertical className="w-3 h-3 text-white" />
+        </button>
+      </div>
+
+      {/* Mobile actions menu */}
+      {showMobileMenu && (
+        <div className="md:hidden absolute top-8 right-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-30 min-w-[120px]">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDownload(file);
+              setShowMobileMenu(false);
+            }}
+            className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+          >
+            <Download className="w-4 h-4" />
+            <span>Download</span>
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onStar(file.id);
+              setShowMobileMenu(false);
+            }}
+            className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+          >
+            <Star className={`w-4 h-4 ${file.isStarred ? 'text-yellow-500 fill-current' : ''}`} />
+            <span>{file.isStarred ? 'Unstar' : 'Star'}</span>
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onTrash(file.id);
+              setShowMobileMenu(false);
+            }}
+            className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+          >
+            <Trash className="w-4 h-4" />
+            <span>Move to trash</span>
           </button>
         </div>
       )}
