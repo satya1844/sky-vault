@@ -98,8 +98,8 @@ export default function Topbar({ user, onSearch, files = [], onSidebarToggle }: 
     document.addEventListener("keydown", handleEscapeKey);
     return () => document.removeEventListener("keydown", handleEscapeKey);
   }, []);
-
-  const getInitial = () => {
+    
+    const getInitial = () => {
     if (user?.firstName) return user.firstName.charAt(0).toUpperCase();
     return "P"; // fallback
   };

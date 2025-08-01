@@ -8,6 +8,36 @@ import axios from "axios";
 import { addToast } from "@heroui/toast";
 import type { File as FileType } from "@/lib/db/schema";
 
+// Custom Image component with error handling
+const SafeImage = ({ src, alt, width, height, className }: {
+  src: string;
+  alt: string;
+  width: number;
+  height: number;
+  className?: string;
+}) => {
+  const [imageSrc, setImageSrc] = useState(src);
+  const [hasError, setHasError] = useState(false);
+
+  const handleError = () => {
+    if (!hasError) {
+      setHasError(true);
+      setImageSrc('/file.svg'); // Fallback to existing file icon
+    }
+  };
+
+  return (
+    <Image
+      src={imageSrc}
+      alt={alt}
+      width={width}
+      height={height}
+      className={className}
+      onError={handleError}
+    />
+  );
+};
+
 interface RecentsProps {
   userId: string;
   limit?: number; // How many recent items to show
@@ -146,11 +176,38 @@ export default function Recents({ userId, limit = 20, refreshTrigger = 0 }: Rece
 
   // Get thumbnail URL for images
   const getThumbnailUrl = (file: FileType): string | undefined => {
-    if (file.type.startsWith("image/") && file.path) {
-      // Use ImageKit transformations for thumbnails
-      return `${process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT}/tr:w-200,h-200,fo-auto,q-80/${file.path}`;
+    // Check if it's a folder first
+    if (file.isFolder || file.type === "folder") {
+      return undefined; // Return undefined for folders so we can render the folder icon component
     }
-    return undefined;
+
+    // For images, try to use the original URL without transformation first
+    if (file.type?.startsWith("image/") && file.fileUrl) {
+      // Use original URL to avoid 404s from transformations
+      return file.fileUrl;
+    }
+
+    // Return file type specific icons (use existing SVG files)
+    switch (file.type) {
+      case "application/pdf":
+        return "/file.svg"; // Use existing file icon
+      case "application/msword":
+      case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+        return "/file.svg";
+      case "application/vnd.ms-excel":
+      case "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+        return "/file.svg";
+      case "application/vnd.ms-powerpoint":
+      case "application/vnd.openxmlformats-officedocument.presentationml.presentation":
+        return "/file.svg";
+      case "application/zip":
+      case "application/x-zip-compressed":
+        return "/file.svg";
+      case "text/plain":
+        return "/file.svg";
+      default:
+        return "/file.svg";
+    }
   };
 
   // Get appropriate icon for file type
@@ -209,12 +266,17 @@ export default function Recents({ userId, limit = 20, refreshTrigger = 0 }: Rece
               >
                 {/* Background Image with Uniform Blur */}
                 <div className="absolute inset-0">
-                  {thumbnailUrl ? (
-                    <Image
+                  {file.isFolder || file.type === "folder" ? (
+                    <div className="w-full h-full bg-gradient-to-br from-gray-600 to-gray-800 flex items-center justify-center">
+                      <Folder className="w-8 h-8 text-blue-500" />
+                    </div>
+                  ) : thumbnailUrl ? (
+                    <SafeImage
                       src={thumbnailUrl}
                       alt={file.name}
-                      fill
-                      className="object-cover"
+                      width={200}
+                      height={200}
+                      className="object-cover w-full h-full"
                     />
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-gray-600 to-gray-800 flex items-center justify-center">

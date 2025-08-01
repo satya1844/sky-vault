@@ -5,8 +5,9 @@ import { AnimatePresence, motion } from "motion/react";
 import { IconMenu2, IconX } from "@tabler/icons-react";
 import { IconBrandTabler, IconUserBolt, IconSettings, IconArrowLeft, IconHome, IconFolder, IconClock, IconShare, IconStar, IconTrash, IconLogout } from "@tabler/icons-react";
 import { useUser, useClerk } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useState } from "react";
+import Link from "next/link";
 
 interface Links {
   label: string;
@@ -241,23 +242,55 @@ export const SidebarLink = ({
   className?: string;
 }) => {
   const { open, animate, isMobile, isTablet } = useSidebar();
+  const pathname = usePathname();
+  const isActive = pathname === link.href;
+  const { signOut } = useClerk();
   
   // Handle logout click
   const handleClick = (e: React.MouseEvent) => {
     if (link.href === "/sign-out") {
       e.preventDefault();
-      console.log("Logout clicked");
+      signOut();
     }
   };
 
+  if (link.href === "/sign-out") {
+    return (
+      <button
+        onClick={handleClick}
+        className={cn(
+          "flex items-center justify-start gap-3 group/sidebar py-3 px-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors w-full text-left",
+          className
+        )}
+        {...props}
+      >
+        {link.icon}
+
+        <motion.span
+          animate={{
+            display: animate ? (open ? "inline-block" : "none") : "inline-block",
+            opacity: animate ? (open ? 1 : 0) : 1,
+          }}
+          className={cn(
+            "text-neutral-700 dark:text-neutral-200 text-sm group-hover/sidebar:translate-x-1 transition duration-150 whitespace-pre inline-block !p-0 !m-0",
+            isMobile && "text-base",
+            isTablet && "text-sm"
+          )}
+        >
+          {link.label}
+        </motion.span>
+      </button>
+    );
+  }
+
   return (
-    <a
+    <Link
       href={link.href}
       className={cn(
         "flex items-center justify-start gap-3 group/sidebar py-3 px-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors",
+        isActive && "bg-neutral-100 dark:bg-neutral-800",
         className
       )}
-      onClick={handleClick}
       {...props}
     >
       {link.icon}
@@ -275,7 +308,7 @@ export const SidebarLink = ({
       >
         {link.label}
       </motion.span>
-    </a>
+    </Link>
   );
 };
 

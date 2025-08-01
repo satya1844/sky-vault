@@ -4,9 +4,75 @@ import axios from "axios";
 import { addToast } from "@heroui/toast";
 import { format } from "date-fns";
 import { useUser } from "@clerk/nextjs";
-import { Grid, List, Star, Trash, Download } from "lucide-react";
+import { Grid, List, Star, Trash, Download, Folder } from "lucide-react";
 import Image from "next/image";
 import type { File as FileType } from "@/lib/db/schema";
+
+// Custom Image component with error handling
+const SafeImage = ({ src, alt, width, height, className }: {
+  src: string;
+  alt: string;
+  width: number;
+  height: number;
+  className?: string;
+}) => {
+  const [imageSrc, setImageSrc] = useState(src);
+  const [hasError, setHasError] = useState(false);
+
+  const handleError = () => {
+    if (!hasError) {
+      setHasError(true);
+      setImageSrc('/file.svg'); // Fallback to existing file icon
+    }
+  };
+
+  return (
+    <Image
+      src={imageSrc}
+      alt={alt}
+      width={width}
+      height={height}
+      className={className}
+      onError={handleError}
+    />
+  );
+};
+
+// Move getThumbnailUrl outside the component so it can be accessed by FileGridItem
+const getThumbnailUrl = (file: FileType): string | undefined => {
+  // Check if it's a folder first
+  if (file.isFolder || file.type === "folder") {
+    return undefined; // Return undefined for folders so we can render the folder icon component
+  }
+
+  // For images, try to use the original URL without transformation first
+  if (file.type?.startsWith("image/") && file.fileUrl) {
+    // Use original URL to avoid 404s from transformations
+    return file.fileUrl;
+  }
+
+  // Return file type specific icons (use existing SVG files)
+  switch (file.type) {
+    case "application/pdf":
+      return "/file.svg"; // Use existing file icon
+    case "application/msword":
+    case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+      return "/file.svg";
+    case "application/vnd.ms-excel":
+    case "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+      return "/file.svg";
+    case "application/vnd.ms-powerpoint":
+    case "application/vnd.openxmlformats-officedocument.presentationml.presentation":
+      return "/file.svg";
+    case "application/zip":
+    case "application/x-zip-compressed":
+      return "/file.svg";
+    case "text/plain":
+      return "/file.svg";
+    default:
+      return "/file.svg";
+  }
+};
 
 interface RecentsProps {
   limit?: number;
@@ -79,29 +145,6 @@ export default function Recents({ limit = 20 }: RecentsProps) {
   useEffect(() => {
     fetchRecentFiles();
   }, [fetchRecentFiles]);
-
-  const getThumbnailUrl = (file: FileType): string | undefined => {
-    if (file.type.startsWith("image/") && file.path) {
-      return `${process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT}/tr:w-200,h-200,fo-auto,q-80/${file.path}`;
-    }
-
-    // Return file type specific icons
-    switch (file.type) {
-      case "application/pdf":
-        return "/icons/pdf.png";
-      case "application/msword":
-      case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
-        return "/icons/doc.png";
-      case "application/vnd.ms-excel":
-      case "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
-        return "/icons/xls.png";
-      case "application/vnd.ms-powerpoint":
-      case "application/vnd.openxmlformats-officedocument.presentationml.presentation":
-        return "/icons/ppt.png";
-      default:
-        return "/icons/file.png";
-    }
-  };
 
   const formatFileSize = (bytes: number): string => {
     if (!bytes) return "0 Bytes";
@@ -360,9 +403,82 @@ export default function Recents({ limit = 20 }: RecentsProps) {
     }
   };
 
+  // Handle file or folder click
+  const handleItemClick = (file: FileType) => {
+    console.log('Recent Files: Item clicked:', file.name, 'isFolder:', file.isFolder);
+    if (file.isFolder) {
+      // For folders, you might want to navigate to the files page with this folder
+      // or implement folder navigation within this component
+      addToast({
+        title: "Folder Clicked",
+        description: `Opening folder "${file.name}"...`,
+        color: "primary",
+        classNames: {
+          base: `
+            custom-toast-width
+            bg-zinc-900
+            text-white
+            px-4
+            py-3
+            border
+            border-zinc-700
+            shadow-xl
+            flex
+            items-start
+            gap-3
+          `,
+          closeButton: `
+            hover:bg-white/10
+            transition
+            p-1
+            rounded
+            ml-auto
+          `,
+        },
+      });
+      // You could navigate to the main files page with this folder selected
+      // window.location.href = `/dashboard/files?folder=${file.id}`;
+    } else if (file.type.startsWith("image/")) {
+      // Open image in a new tab for viewing
+      const viewUrl = file.fileUrl;
+      if (viewUrl) {
+        window.open(viewUrl, "_blank");
+      }
+    } else {
+      // For other file types, you might want to download or open them
+      addToast({
+        title: "File Clicked",
+        description: `Opening "${file.name}"...`,
+        color: "primary",
+        classNames: {
+          base: `
+            custom-toast-width
+            bg-zinc-900
+            text-white
+            px-4
+            py-3
+            border
+            border-zinc-700
+            shadow-xl
+            flex
+            items-start
+            gap-3
+          `,
+          closeButton: `
+            hover:bg-white/10
+            transition
+            p-1
+            rounded
+            ml-auto
+          `,
+        },
+      });
+    }
+  };
+
   if (loading) {
     return (
-      <div className="p-4 md:p-6 bg-gray-900 min-h-screen">
+      <div className="p-4 md:p-6 bg-background min-h-screen">
         <h2 className="text-lg md:text-xl font-semibold mb-4 text-white">Recent Files</h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-3 md:gap-4">
           {Array.from({ length: 12 }).map((_, index) => (
@@ -383,7 +499,7 @@ export default function Recents({ limit = 20 }: RecentsProps) {
   }
 
   return (
-    <div className="p-4 md:p-6 bg-gray-900 min-h-screen">
+    <div className="p-4 md:p-6 bg-background min-h-screen">
       <div className="flex justify-between items-center mb-4 md:mb-6">
         <div className="flex items-center space-x-2">
           <div className="w-5 h-5 md:w-6 md:h-6 bg-blue-500 rounded-full flex items-center justify-center">
@@ -446,6 +562,7 @@ export default function Recents({ limit = 20 }: RecentsProps) {
                     onStar={handleStarFile}
                     onTrash={handleTrashFile}
                     onDownload={handleDownloadFile}
+                    onItemClick={handleItemClick}
                     formatFileSize={formatFileSize}
                   />
                 ))}
@@ -460,6 +577,7 @@ export default function Recents({ limit = 20 }: RecentsProps) {
                   onStar={handleStarFile}
                   onTrash={handleTrashFile}
                   onDownload={handleDownloadFile}
+                  onItemClick={handleItemClick}
                 />
               ))}
             </div>
@@ -475,29 +593,35 @@ interface FileListItemProps {
   onStar: (fileId: string) => void;
   onTrash: (fileId: string) => void;
   onDownload: (file: FileType) => void;
+  onItemClick: (file: FileType) => void;
   formatFileSize: (bytes: number) => string;
 }
 
-function FileListItem({ file, onStar, onTrash, onDownload, formatFileSize }: FileListItemProps) {
+function FileListItem({ file, onStar, onTrash, onDownload, onItemClick, formatFileSize }: FileListItemProps) {
   const [showActions, setShowActions] = useState(false);
   const thumbnailUrl = getThumbnailUrl(file);
 
   return (
     <div
-      className="grid grid-cols-12 gap-2 md:gap-4 px-3 md:px-4 py-2 md:py-3 hover:bg-gray-750 transition-colors group"
+      className="grid grid-cols-12 gap-2 md:gap-4 px-3 md:px-4 py-2 md:py-3 hover:bg-gray-750 transition-colors group cursor-pointer"
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
+      onClick={() => onItemClick(file)}
     >
       {/* Name column with icon */}
       <div className="col-span-8 md:col-span-6 flex items-center space-x-2 md:space-x-3 min-w-0">
         <div className="flex-shrink-0 w-6 h-6 md:w-8 md:h-8 relative">
-          <Image
-            src={thumbnailUrl || '/placeholder-image.jpg'}
-            alt={file.name}
-            width={32}
-            height={32}
-            className="rounded object-cover"
-          />
+          {file.isFolder || file.type === "folder" ? (
+            <Folder className="w-6 h-6 md:w-8 md:h-8 text-blue-500" />
+          ) : (
+            <SafeImage
+              src={thumbnailUrl || '/file.svg'}
+              alt={file.name}
+              width={32}
+              height={32}
+              className="rounded object-cover"
+            />
+          )}
         </div>
         <div className="flex items-center space-x-1 md:space-x-2 min-w-0 flex-1">
           <span className="text-white font-medium truncate text-sm md:text-base">{file.name}</span>
@@ -526,28 +650,37 @@ function FileListItem({ file, onStar, onTrash, onDownload, formatFileSize }: Fil
         {showActions && (
           <>
             <button
-              onClick={() => onDownload(file)}
-              className="p-1 md:p-1.5 rounded-full bg-blue-600 hover:bg-blue-700 transition-colors opacity-0 group-hover:opacity-100"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDownload(file);
+              }}
+              className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
               aria-label="Download file"
               title="Download file"
             >
-              <Download className="w-3 h-3 md:w-4 md:h-4 text-white" />
+              <Download className="w-4 h-4" />
             </button>
             <button
-              onClick={() => onStar(file.id)}
-              className="p-1 md:p-1.5 rounded-full bg-yellow-600 hover:bg-yellow-700 transition-colors opacity-0 group-hover:opacity-100"
+              onClick={(e) => {
+                e.stopPropagation();
+                onStar(file.id);
+              }}
+              className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
               aria-label="Star file"
               title="Star file"
             >
-              <Star className="w-3 h-3 md:w-4 md:h-4 text-white" />
+              <Star className={`w-4 h-4 ${file.isStarred ? 'text-yellow-500 fill-current' : ''}`} />
             </button>
             <button
-              onClick={() => onTrash(file.id)}
-              className="p-1 md:p-1.5 rounded-full bg-red-600 hover:bg-red-700 transition-colors opacity-0 group-hover:opacity-100"
+              onClick={(e) => {
+                e.stopPropagation();
+                onTrash(file.id);
+              }}
+              className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
               aria-label="Move to trash"
               title="Move to trash"
             >
-              <Trash className="w-3 h-3 md:w-4 md:h-4 text-white" />
+              <Trash className="w-4 h-4" />
             </button>
           </>
         )}
@@ -561,26 +694,35 @@ interface FileGridItemProps {
   onStar: (fileId: string) => void;
   onTrash: (fileId: string) => void;
   onDownload: (file: FileType) => void;
+  onItemClick: (file: FileType) => void;
 }
 
-function FileGridItem({ file, onStar, onTrash, onDownload }: FileGridItemProps) {
+function FileGridItem({ file, onStar, onTrash, onDownload, onItemClick }: FileGridItemProps) {
   const [showActions, setShowActions] = useState(false);
   const thumbnailUrl = getThumbnailUrl(file);
 
   return (
     <div
-      className="group relative aspect-square rounded-lg md:rounded-xl overflow-hidden bg-gray-800 hover:bg-gray-750 transition-all duration-200"
+      className="group relative aspect-square rounded-lg md:rounded-xl overflow-hidden bg-gray-800 hover:bg-gray-750 transition-all duration-200 cursor-pointer"
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
+      onClick={() => onItemClick(file)}
     >
       {/* Thumbnail */}
       <div className="w-full h-full relative">
-        <Image
-          src={thumbnailUrl || '/placeholder-image.jpg'}
-          alt={file.name}
-          fill
-          className="object-cover opacity-75"
-        />
+        {file.isFolder || file.type === "folder" ? (
+          <div className="w-full h-full flex items-center justify-center bg-gray-700">
+            <Folder className="w-12 h-12 md:w-16 md:h-16 text-blue-500" />
+          </div>
+        ) : (
+          <SafeImage
+            src={thumbnailUrl || '/file.svg'}
+            alt={file.name}
+            width={200}
+            height={200}
+            className="object-cover opacity-75 w-full h-full"
+          />
+        )}
         {file.isStarred && (
           <div className="absolute top-1 md:top-2 left-1 md:left-2">
             <Star className="w-3 h-3 md:w-4 md:h-4 text-yellow-400 fill-current" />
@@ -602,28 +744,37 @@ function FileGridItem({ file, onStar, onTrash, onDownload }: FileGridItemProps) 
       {showActions && (
         <div className="absolute top-1 md:top-2 right-1 md:right-2 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1">
           <button
-            onClick={() => onDownload(file)}
-            className="p-1 md:p-1.5 rounded-full bg-blue-600 bg-opacity-80 hover:bg-opacity-100 transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDownload(file);
+            }}
+            className="p-1.5 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors"
             aria-label="Download file"
             title="Download file"
           >
-            <Download className="w-3 h-3 md:w-4 md:h-4 text-white" />
+            <Download className="w-3.5 h-3.5 text-gray-600" />
           </button>
           <button
-            onClick={() => onStar(file.id)}
-            className="p-1 md:p-1.5 rounded-full bg-yellow-600 bg-opacity-80 hover:bg-opacity-100 transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
+              onStar(file.id);
+            }}
+            className="p-1.5 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors"
             aria-label="Star file"
             title="Star file"
           >
-            <Star className="w-3 h-3 md:w-4 md:h-4 text-white" />
+            <Star className={`w-3.5 h-3.5 ${file.isStarred ? 'text-yellow-500 fill-current' : 'text-gray-600'}`} />
           </button>
           <button
-            onClick={() => onTrash(file.id)}
-            className="p-1 md:p-1.5 rounded-full bg-red-600 bg-opacity-80 hover:bg-opacity-100 transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
+              onTrash(file.id);
+            }}
+            className="p-1.5 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors"
             aria-label="Move to trash"
             title="Move to trash"
           >
-            <Trash className="w-3 h-3 md:w-4 md:h-4 text-white" />
+            <Trash className="w-3.5 h-3.5 text-gray-600" />
           </button>
         </div>
       )}

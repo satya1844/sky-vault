@@ -1,7 +1,6 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import DashboardContent from "@/components/DashboardContent";
-import DashboardWrapper from "@/components/dashboard/DashboardWrapper";
 
 export default async function Dashboard() {
   const { userId } = await auth();
@@ -20,9 +19,5 @@ export default async function Dashboard() {
     emailAddress: user.emailAddresses?.[0]?.emailAddress
   } : undefined;
 
-  return (
-    <DashboardWrapper user={serializedUser}>
-      <DashboardContent user={serializedUser} />
-    </DashboardWrapper>
-  );
+  return <DashboardContent user={serializedUser} />;
 }

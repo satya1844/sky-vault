@@ -3,10 +3,40 @@ import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { addToast } from "@heroui/toast";
 import { useUser } from "@clerk/nextjs";
-import { Grid, List, Star, X } from "lucide-react";
+import { Grid, List, Star, X, Folder } from "lucide-react";
 import Image from "next/image";
 import { format } from "date-fns";
 import type { File as FileType } from "@/lib/db/schema";
+
+// Custom Image component with error handling
+const SafeImage = ({ src, alt, width, height, className }: {
+  src: string;
+  alt: string;
+  width: number;
+  height: number;
+  className?: string;
+}) => {
+  const [imageSrc, setImageSrc] = useState(src);
+  const [hasError, setHasError] = useState(false);
+
+  const handleError = () => {
+    if (!hasError) {
+      setHasError(true);
+      setImageSrc('/file.svg'); // Fallback to existing file icon
+    }
+  };
+
+  return (
+    <Image
+      src={imageSrc}
+      alt={alt}
+      width={width}
+      height={height}
+      className={className}
+      onError={handleError}
+    />
+  );
+};
 
 export default function Favorites() {
   const { user } = useUser();
@@ -50,7 +80,7 @@ export default function Favorites() {
       addToast({
         title: "Removed from Favorites",
         description: "File is no longer starred.",
-        color: "info",
+        color: "primary",
       });
     } catch (error) {
       console.error("Error unstarring file:", error);
@@ -205,13 +235,17 @@ function FileListItem({ file, onUnstar, formatFileSize, getRelativeTime }: FileL
       {/* Name column with icon and star */}
       <div className="col-span-8 md:col-span-6 flex items-center space-x-2 md:space-x-3 min-w-0">
         <div className="flex-shrink-0 w-6 h-6 md:w-8 md:h-8 relative">
-          <Image
-            src={thumbnailUrl || '/placeholder-image.jpg'}
-            alt={file.name}
-            width={32}
-            height={32}
-            className="rounded object-cover"
-          />
+          {file.isFolder || file.type === "folder" ? (
+            <Folder className="w-6 h-6 md:w-8 md:h-8 text-blue-500" />
+          ) : (
+            <SafeImage
+              src={thumbnailUrl || '/file.svg'}
+              alt={file.name}
+              width={32}
+              height={32}
+              className="rounded object-cover"
+            />
+          )}
         </div>
         <div className="flex items-center space-x-1 md:space-x-2 min-w-0 flex-1">
           <span className="text-white font-medium truncate text-sm md:text-base">{file.name}</span>
@@ -222,7 +256,7 @@ function FileListItem({ file, onUnstar, formatFileSize, getRelativeTime }: FileL
       {/* Modified column - Hidden on mobile */}
       <div className="hidden md:flex col-span-3 items-center">
         <span className="text-gray-400 text-sm">
-          {getRelativeTime(file.updatedAt || file.createdAt)}
+          {getRelativeTime(file.updatedAt ? file.updatedAt.toISOString() : file.createdAt.toISOString())}
         </span>
       </div>
 
@@ -267,12 +301,19 @@ function FileGridItem({ file, onUnstar }: FileGridItemProps) {
     >
       {/* Thumbnail */}
       <div className="w-full h-full relative">
-        <Image
-          src={thumbnailUrl || '/placeholder-image.jpg'}
-          alt={file.name}
-          fill
-          className="object-cover opacity-75"
-        />
+        {file.isFolder || file.type === "folder" ? (
+          <div className="w-full h-full flex items-center justify-center bg-gray-700">
+            <Folder className="w-12 h-12 md:w-16 md:h-16 text-blue-500" />
+          </div>
+        ) : (
+          <SafeImage
+            src={thumbnailUrl || '/file.svg'}
+            alt={file.name}
+            width={200}
+            height={200}
+            className="object-cover opacity-75 w-full h-full"
+          />
+        )}
         <div className="absolute top-1 md:top-2 left-1 md:left-2">
           <Star className="w-3 h-3 md:w-4 md:h-4 text-yellow-400 fill-current" />
         </div>
@@ -305,24 +346,37 @@ function FileGridItem({ file, onUnstar }: FileGridItemProps) {
   );
 }
 
-function getThumbnailUrl(file: FileType): string {
-  if (file.type.startsWith("image/")) {
-    return `${process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT}/tr:w-200,h-200,fo-auto/${file.path}`;
+function getThumbnailUrl(file: FileType): string | undefined {
+  // Check if it's a folder first
+  if (file.isFolder || file.type === "folder") {
+    return undefined; // Return undefined for folders so we can render the folder icon component
   }
 
+  // For images, try to use the original URL without transformation first
+  if (file.type?.startsWith("image/") && file.fileUrl) {
+    // Use original URL to avoid 404s from transformations
+    return file.fileUrl;
+  }
+
+  // Return file type specific icons (use existing SVG files)
   switch (file.type) {
     case "application/pdf":
-      return "/icons/pdf.png";
+      return "/file.svg"; // Use existing file icon
     case "application/msword":
     case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
-      return "/icons/doc.png";
+      return "/file.svg";
     case "application/vnd.ms-excel":
     case "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
-      return "/icons/xls.png";
+      return "/file.svg";
     case "application/vnd.ms-powerpoint":
     case "application/vnd.openxmlformats-officedocument.presentationml.presentation":
-      return "/icons/ppt.png";
+      return "/file.svg";
+    case "application/zip":
+    case "application/x-zip-compressed":
+      return "/file.svg";
+    case "text/plain":
+      return "/file.svg";
     default:
-      return "/icons/file.png";
+      return "/file.svg";
   }
 }

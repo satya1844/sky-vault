@@ -1,11 +1,20 @@
 import React from 'react'
+import { auth } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
 
-function settings() {
+function Settings() {
+  const { userId } = auth();
+  
+  if (!userId) {
+    redirect("/sign-in");
+  }
+
   return (
-    <div>
-      settings
+    <div className="p-6">
+      <h1 className="text-2xl font-bold mb-4">Settings</h1>
+      {/* Your settings content here */}
     </div>
   )
 }
 
-export default settings
+export default Settings

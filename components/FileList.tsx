@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { Folder, Star, Trash, X, ExternalLink, StarIcon, EyeClosed, Filter, Grid, List } from "lucide-react";
-import { Card } from "@heroui/card";
 import { Input } from "@heroui/input";
 import { Button } from "@heroui/button";
 import { Tooltip } from "@heroui/tooltip";
@@ -18,6 +17,36 @@ import FileIcon from "@/components/FileIcon";
 import FileLoadingState from "@/components/FileLoadingState";
 import FileTabs from "@/components/FileTabs";
 import FolderNavigation from "@/components/FolderNavigation";
+
+// Custom Image component with error handling
+const SafeImage = ({ src, alt, width, height, className }: {
+  src: string;
+  alt: string;
+  width: number;
+  height: number;
+  className?: string;
+}) => {
+  const [imageSrc, setImageSrc] = useState(src);
+  const [hasError, setHasError] = useState(false);
+
+  const handleError = () => {
+    if (!hasError) {
+      setHasError(true);
+      setImageSrc('/file.svg'); // Fallback to existing file icon
+    }
+  };
+
+  return (
+    <Image
+      src={imageSrc}
+      alt={alt}
+      width={width}
+      height={height}
+      className={className}
+      onError={handleError}
+    />
+  );
+};
 
 interface FileListProps {
   userId: string;
@@ -146,10 +175,38 @@ export default function FileList({
 
   // Get thumbnail URL for images
   const getThumbnailUrl = (file: FileType): string | undefined => {
-    if (file.type.startsWith("image/") && file.path) {
-      return `${process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT}/tr:w-200,h-200,fo-auto,q-80/${file.path}`;
+    // Check if it's a folder first
+    if (file.isFolder || file.type === "folder") {
+      return undefined; // Return undefined for folders so we can render the folder icon component
     }
-    return undefined;
+
+    // For images, try to use the original URL without transformation first
+    if (file.type?.startsWith("image/") && file.fileUrl) {
+      // Use original URL to avoid 404s from transformations
+      return file.fileUrl;
+    }
+
+    // Return file type specific icons (use existing SVG files)
+    switch (file.type) {
+      case "application/pdf":
+        return "/file.svg"; // Use existing file icon
+      case "application/msword":
+      case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+        return "/file.svg";
+      case "application/vnd.ms-excel":
+      case "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+        return "/file.svg";
+      case "application/vnd.ms-powerpoint":
+      case "application/vnd.openxmlformats-officedocument.presentationml.presentation":
+        return "/file.svg";
+      case "application/zip":
+      case "application/x-zip-compressed":
+        return "/file.svg";
+      case "text/plain":
+        return "/file.svg";
+      default:
+        return "/file.svg";
+    }
   };
 
   // Navigate to a folder
@@ -212,11 +269,18 @@ export default function FileList({
 
   // Handle file or folder click
   const handleItemClick = (file: FileType) => {
+    console.log('FileList: Item clicked:', file.name, 'isFolder:', file.isFolder, 'type:', file.type);
+    console.log('FileList: File object:', file);
+    
     if (file.isFolder) {
+      console.log('FileList: Navigating to folder...');
       // Navigate to the clicked folder
       navigateToFolder(file.id, file.name);
     } else if (file.type.startsWith("image/")) {
+      console.log('FileList: Opening image viewer...');
       openImageViewer(file);
+    } else {
+      console.log('FileList: Non-image file clicked, no action taken');
     }
   };
 
@@ -820,40 +884,46 @@ export default function FileList({
               const thumbnailUrl = getThumbnailUrl(file);
 
               return (
-                <Card
+                <div
                   key={file.id}
-                  className="group relative aspect-square rounded-2xl border border-white/10 shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 overflow-hidden cursor-pointer"
-                  onClick={() => handleItemClick(file)}
+                  className="group relative aspect-square rounded-2xl border border-white/10 shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 overflow-hidden cursor-pointer bg-gray-800"
+                  onClick={(e) => {
+                    console.log('DIV clicked for file:', file.name);
+                    console.log('Event target:', e.target);
+                    console.log('Event current target:', e.currentTarget);
+                    handleItemClick(file);
+                  }}
                 >
                   {/* Background image or icon */}
                   <div className="absolute inset-0">
-                    {thumbnailUrl ? (
-                      <Image
+                    {file.isFolder || file.type === "folder" ? (
+                      <div className="w-full h-full bg-gradient-to-br from-gray-600 to-gray-800 flex items-center justify-center">
+                        <Folder className="w-12 h-12 text-blue-500" />
+                      </div>
+                    ) : thumbnailUrl ? (
+                      <SafeImage
                         src={thumbnailUrl}
                         alt={file.name}
-                        fill
-                        className="object-cover"
+                        width={200}
+                        height={200}
+                        className="object-cover w-full h-full"
                       />
                     ) : (
                       <div className="w-full h-full bg-gradient-to-br from-gray-600 to-gray-800 flex items-center justify-center">
-                        {file.isFolder ? (
-                          <Folder className="w-12 h-12 text-blue-500" />
-                        ) : (
-                          <FileIcon file={file.id} />
-                        )}
+                        <FileIcon file={file} />
                       </div>
                     )}
 
                     {/* Uniform blur overlay */}
-                    <div className="absolute inset-0 bg-black/15 backdrop-blur-[0.5px] group-hover:bg-black/5 group-hover:backdrop-blur-[0.25px] transition-all duration-300"></div>
+                    <div className="absolute inset-0 bg-black/15 backdrop-blur-[0.5px] group-hover:bg-black/5 group-hover:backdrop-blur-[0.25px] transition-all duration-300 pointer-events-none"></div>
                   </div>
 
                   {/* Hover actions */}
-                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 pointer-events-auto z-10">
+                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 z-10">
                     {!file.isFolder && (
                       <Tooltip content="Download">
                         <button
-                          className="p-1.5 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors"
+                          className="p-1.5 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors pointer-events-auto"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleDownloadFile(file);
@@ -865,7 +935,7 @@ export default function FileList({
                     )}
                     <Tooltip content={file.isStarred ? "Remove from starred" : "Add to starred"}>
                       <button
-                        className="p-1.5 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors"
+                        className="p-1.5 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors pointer-events-auto"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleStarFile(file.id);
@@ -878,7 +948,7 @@ export default function FileList({
                     </Tooltip>
                     <Tooltip content={file.isTrashed ? "Restore" : "Move to trash"}>
                       <button
-                        className="p-1.5 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors"
+                        className="p-1.5 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors pointer-events-auto"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleTrashFile(file.id);
@@ -890,7 +960,7 @@ export default function FileList({
                     {activeTab === "trash" && (
                       <Tooltip content="Delete permanently">
                         <button
-                          className="p-1.5 bg-white rounded-full shadow-md hover:bg-red-50 transition-colors"
+                          className="p-1.5 bg-white rounded-full shadow-md hover:bg-red-50 transition-colors pointer-events-auto"
                           onClick={(e) => {
                             e.stopPropagation();
                             setSelectedFile(file);
@@ -905,13 +975,13 @@ export default function FileList({
 
                   {/* Star icon on top left */}
                   {file.isStarred && (
-                    <div className="absolute top-2 left-2 z-10">
+                    <div className="absolute top-2 left-2 z-10 pointer-events-none">
                       <Star className="w-4 h-4 text-yellow-500 fill-current" />
                     </div>
                   )}
 
                   {/* Bottom Meta Info Card */}
-                  <div className="absolute bottom-0 left-0 right-0 p-3 bg-[#1d1d1d] bg-opacity-95 text-white space-y-1 z-10">
+                  <div className="absolute bottom-0 left-0 right-0 p-3 bg-[#1d1d1d] bg-opacity-95 text-white space-y-1 z-10 pointer-events-none">
                     <h3
                       className="font-medium text-sm truncate"
                       title={file.name}
@@ -936,7 +1006,7 @@ export default function FileList({
                       </div>
                     )} */}
                   </div>
-                </Card>
+                </div>
 
               );
             })}
@@ -963,21 +1033,26 @@ export default function FileList({
                   <div
                     key={file.id}
                     className="group flex items-center px-4 py-3 hover:border hover:border-white/80 cursor-pointer transition-colors"
-                    onClick={() => handleItemClick(file)}
+                    onClick={(e) => {
+                      console.log('List item clicked for file:', file.name);
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleItemClick(file);
+                    }}
                   >
                     {/* File Icon/Thumbnail and Name */}
                     <div className="flex items-center flex-1 min-w-0">
                       <div className="w-8 h-8 rounded flex items-center justify-center mr-3 flex-shrink-0 overflow-hidden bg-gray-100">
-                        {thumbnailUrl ? (
-                          <Image
+                        {file.isFolder || file.type === "folder" ? (
+                          <Folder className="w-6 h-6 text-blue-500" />
+                        ) : thumbnailUrl ? (
+                          <SafeImage
                             src={thumbnailUrl}
                             alt={file.name}
                             width={32}
                             height={32}
                             className="object-cover w-full h-full rounded"
                           />
-                        ) : file.isFolder ? (
-                          <Folder className="w-6 h-6 text-blue-500" />
                         ) : (
                           <FileIcon file={file} />
                         )}
