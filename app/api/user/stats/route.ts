@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get user's files (excluding trashed files)
-    const userFiles = await db
+    const userFiles = await db()
       .select({
         id: files.id,
         size: files.size,

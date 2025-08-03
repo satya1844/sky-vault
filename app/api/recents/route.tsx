@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const recentFiles = await db
+    const recentFiles = await db()
       .select()
       .from(files)
       .where(eq(files.userId, userId))

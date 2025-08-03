@@ -32,7 +32,7 @@ export async function DELETE(
     }
 
     // Get the file to be deleted
-    const [file] = await db
+    const [file] = await db()
       .select()
       .from(files)
       .where(and(eq(files.id, fileId), eq(files.userId, userId)));
@@ -70,7 +70,7 @@ export async function DELETE(
     }
 
     // Delete file from database
-    const [deletedFile] = await db
+    const [deletedFile] = await db()
       .delete(files)
       .where(and(eq(files.id, fileId), eq(files.userId, userId)))
       .returning();

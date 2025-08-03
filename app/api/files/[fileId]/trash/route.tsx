@@ -23,7 +23,7 @@ export async function PATCH(
     }
 
     // Get the current file
-    const [file] = await db
+    const [file] = await db()
       .select()
       .from(files)
       .where(and(eq(files.id, fileId), eq(files.userId, userId)));
@@ -33,7 +33,7 @@ export async function PATCH(
     }
 
     // Toggle the isTrashed status (move to trash or restore)
-    const [updatedFile] = await db
+    const [updatedFile] = await db()
       .update(files)
       .set({ isTrashed: !file.isTrashed })
       .where(and(eq(files.id, fileId), eq(files.userId, userId)))

@@ -26,13 +26,13 @@ export async function GET(request: NextRequest) {
     let userFiles;
     if (parentId) {
       // Fetch files within a specific folder
-      userFiles = await db
+      userFiles = await db()
         .select()
         .from(files)
         .where(and(eq(files.userId, userId), eq(files.parentId, parentId)));
     } else {
       // Fetch root-level files (where parentId is null)
-      userFiles = await db
+      userFiles = await db()
         .select()
         .from(files)
         .where(and(eq(files.userId, userId), isNull(files.parentId)));

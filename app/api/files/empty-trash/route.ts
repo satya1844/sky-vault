@@ -20,7 +20,7 @@ export async function DELETE() {
     }
 
     // Get all files in trash for this user
-    const trashedFiles = await db
+    const trashedFiles = await db()
       .select()
       .from(files)
       .where(and(eq(files.userId, userId), eq(files.isTrashed, true)));
@@ -77,7 +77,7 @@ export async function DELETE() {
     await Promise.allSettled(deletePromises);
 
     // Delete all trashed files from the database
-    const deletedFiles = await db
+    const deletedFiles = await db()
       .delete(files)
       .where(and(eq(files.userId, userId), eq(files.isTrashed, true)))
       .returning();

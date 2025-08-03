@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     };
 
     // Insert file record into database
-    const [newFile] = await db.insert(files).values(fileData).returning();
+    const [newFile] = await db().insert(files).values(fileData).returning();
 
     return NextResponse.json(newFile);
   } catch (error) {

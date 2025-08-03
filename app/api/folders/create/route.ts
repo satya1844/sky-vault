@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
 
     
     if (parentId) {
-      const [parentFolder] = await db
+      const [parentFolder] = await db()
         .select()
         .from(files)
         .where(
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
       isTrashed: false,
     };
 
-    const [newFolder] = await db.insert(files).values(folderData).returning();
+    const [newFolder] = await db().insert(files).values(folderData).returning();
 
     return NextResponse.json({
       success: true,

@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
     // Check if parent folder exists if parentId is provided
     if (parentId) {
       console.log("Checking parent folder:", parentId);
-      const [parentFolder] = await db
+      const [parentFolder] = await db()
         .select()
         .from(files)
         .where(
@@ -146,7 +146,7 @@ export async function POST(request: NextRequest) {
     };
 
     console.log("Saving to database...");
-    const [newFile] = await db.insert(files).values(fileData).returning();
+    const [newFile] = await db().insert(files).values(fileData).returning();
 
     console.log("✅ File upload completed successfully:", newFile.id);
     return NextResponse.json(newFile);
