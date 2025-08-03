@@ -34,7 +34,7 @@ const ChatInterface = () => {
   
   const [newMessage, setNewMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const messagesEndRef = useRef(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   
   // AI Response Configuration - Easy to modify
   const aiResponses = [
@@ -48,7 +48,7 @@ const ChatInterface = () => {
     "I appreciate the clarification. This helps a lot.",
   ];
   
-  const getAIResponse = (userMessage) => {
+  const getAIResponse = (userMessage: string) => {
     // You can add logic here to return specific responses based on user input
     // For now, it randomly selects from the responses array
     const randomIndex = Math.floor(Math.random() * aiResponses.length);
@@ -97,7 +97,7 @@ const ChatInterface = () => {
     }
   };
 
-  const handleKeyPress = (e) => {
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
@@ -191,7 +191,7 @@ const ChatInterface = () => {
               onChange={(e) => setNewMessage(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="Type a message..."
-              rows="1"
+              rows={1}
               className="w-full bg-[#f1f1f1] border border-gray-600 text-gray-100 placeholder-gray-400 rounded-xl px-4 py-3 pr-12 outline-none focus:border-blue-500 focus:bg-gray-600 transition-all duration-200 resize-none"
               style={{
                 minHeight: '48px',

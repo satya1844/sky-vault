@@ -38,11 +38,18 @@ const SafeImage = ({ src, alt, width, height, className }: {
   );
 };
 
-interface TrashProps {
-  limit?: number;
+interface PageProps {
+  params: Promise<{ [key: string]: string | string[] | undefined }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-export default function Trash({ limit = 50 }: TrashProps) {
+export default async function Trash({ searchParams }: PageProps) {
+  const resolvedSearchParams = await searchParams;
+  const limit = resolvedSearchParams?.limit ? parseInt(resolvedSearchParams.limit as string, 10) : 50;
+  return <TrashContent limit={limit} />;
+}
+
+function TrashContent({ limit }: { limit: number }) {
   const { user } = useUser();
   const userId = user?.id;
 

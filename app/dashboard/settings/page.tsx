@@ -2,8 +2,8 @@ import React from 'react'
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 
-function Settings() {
-  const { userId } = auth();
+async function Settings() {
+  const { userId } = await auth();
   
   if (!userId) {
     redirect("/sign-in");
