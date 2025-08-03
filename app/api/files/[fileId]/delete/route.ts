@@ -57,19 +57,34 @@ export async function DELETE(
 
         if (imagekitFileId) {
           try {
+            // Try to search for the file first
             const searchResults = await imagekit.listFiles({
               name: imagekitFileId,
               limit: 1,
             });
 
-            if (searchResults && 'fileId' in searchResults && typeof searchResults.fileId === 'string') {
-              await imagekit.deleteFile(searchResults.fileId);
+            if (searchResults && searchResults.length > 0) {
+              const fileObject = searchResults[0];
+              // Check if it's a file object (not a folder) and has fileId
+              if ('fileId' in fileObject && fileObject.fileId) {
+                await imagekit.deleteFile(fileObject.fileId);
+              } else {
+                // Fallback to direct deletion
+                await imagekit.deleteFile(imagekitFileId);
+              }
             } else {
+              // If search doesn't work, try direct deletion with the extracted ID
               await imagekit.deleteFile(imagekitFileId);
             }
           } catch (searchError) {
             console.error(`Error searching for file in ImageKit:`, searchError);
-            await imagekit.deleteFile(imagekitFileId);
+            // Try direct deletion as fallback
+            try {
+              await imagekit.deleteFile(imagekitFileId);
+            } catch (deleteError) {
+              console.error(`Error deleting file ${imagekitFileId} from ImageKit:`, deleteError);
+              // Don't throw here, continue with database deletion
+            }
           }
         }
       } catch (error) {
