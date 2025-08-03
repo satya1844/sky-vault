@@ -84,10 +84,9 @@ function RecentsContent({ limit }: { limit: number }) {
     } catch (error) {
       console.error("Error fetching recent files:", error);
       addToast({
-        type: "error",
         title: "Error",
-        message: "Failed to load recent files",
-        duration: 5000,
+        description: "Failed to load recent files",
+        color: "danger",
       });
       setRecentFiles([]);
     } finally {
@@ -127,19 +126,17 @@ function RecentsContent({ limit }: { limit: number }) {
           )
         );
         addToast({
-          type: "success",
           title: "Success",
-          message: response.data.isStarred ? "File starred" : "File unstarred",
-          duration: 3000,
+          description: response.data.isStarred ? "File starred" : "File unstarred",
+          color: "success",
         });
       }
     } catch (error) {
       console.error("Error starring file:", error);
       addToast({
-        type: "error",
         title: "Error", 
-        message: "Failed to star file",
-        duration: 5000,
+        description: "Failed to star file",
+        color: "danger",
       });
     }
   };
@@ -150,19 +147,17 @@ function RecentsContent({ limit }: { limit: number }) {
       if (response.status === 200) {
         setRecentFiles(prev => prev.filter(file => file.id !== fileId));
         addToast({
-          type: "success",
           title: "Success",
-          message: "File moved to trash",
-          duration: 3000,
+          description: "File moved to trash",
+          color: "success",
         });
       }
     } catch (error) {
       console.error("Error moving file to trash:", error);
       addToast({
-        type: "error",
         title: "Error",
-        message: "Failed to move file to trash",
-        duration: 5000,
+        description: "Failed to move file to trash",
+        color: "danger",
       });
     }
   };
@@ -178,18 +173,16 @@ function RecentsContent({ limit }: { limit: number }) {
       document.body.removeChild(link);
       
       addToast({
-        type: "success",
         title: "Success",
-        message: "File download started",
-        duration: 3000,
+        description: "File download started",
+        color: "success",
       });
     } catch (error) {
       console.error("Error downloading file:", error);
       addToast({
-        type: "error",
         title: "Error",
-        message: "Failed to download file",
-        duration: 5000,
+        description: "Failed to download file",
+        color: "danger",
       });
     }
   };
