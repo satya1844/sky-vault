@@ -3,16 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 import { files } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
-import ImageKit from "imagekit";
-
-// Lazy initialize ImageKit
-function getImageKit() {
-  return new ImageKit({
-    publicKey: process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY || "",
-    privateKey: process.env.IMAGEKIT_PRIVATE_KEY || "",
-    urlEndpoint: process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT || "",
-  });
-}
+import { getImageKit, isImageKitConfigured } from "@/lib/imagekit";
 
 export async function DELETE(
   request: NextRequest,
@@ -43,8 +34,8 @@ export async function DELETE(
       return NextResponse.json({ error: "File not found" }, { status: 404 });
     }
 
-    // Delete file from ImageKit if it's not a folder
-    if (!file.isFolder) {
+    // Delete file from ImageKit if it's not a folder and ImageKit is configured
+    if (!file.isFolder && isImageKitConfigured()) {
       try {
         let imagekitFileId = null;
 

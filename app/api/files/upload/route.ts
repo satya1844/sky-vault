@@ -3,17 +3,8 @@ import { getAuth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 import { files } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
-import ImageKit from "imagekit";
 import { v4 as uuidv4 } from "uuid";
-
-// Lazy initialize ImageKit
-function getImageKit() {
-  return new ImageKit({
-    publicKey: process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY || "",
-    privateKey: process.env.IMAGEKIT_PRIVATE_KEY || "",
-    urlEndpoint: process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT || "",
-  });
-}
+import { getImageKit } from "@/lib/imagekit";
 
 export async function POST(request: NextRequest) {
   console.log("=== File Upload Request Started ===");

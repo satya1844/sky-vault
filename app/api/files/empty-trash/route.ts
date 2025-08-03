@@ -3,16 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 import { files } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
-import ImageKit from "imagekit";
-
-// Lazy initialize ImageKit
-function getImageKit() {
-  return new ImageKit({
-    publicKey: process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY || "",
-    privateKey: process.env.IMAGEKIT_PRIVATE_KEY || "",
-    urlEndpoint: process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT || "",
-  });
-}
+import { getImageKit, isImageKitConfigured } from "@/lib/imagekit";
 
 export async function DELETE() {
   try {
@@ -38,6 +29,11 @@ export async function DELETE() {
     const deletePromises = trashedFiles
       .filter((file) => !file.isFolder) // Skip folders
       .map(async (file) => {
+        if (!isImageKitConfigured()) {
+          console.log("ImageKit not configured, skipping file deletion from ImageKit");
+          return;
+        }
+
         try {
           let imagekitFileId = null;
 
