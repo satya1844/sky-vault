@@ -2,12 +2,14 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import ImageKit from "imagekit";
 
-// Initialize ImageKit with your credentials
-const imagekit = new ImageKit({
-  publicKey: process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY || "",
-  privateKey: process.env.IMAGEKIT_PRIVATE_KEY || "",
-  urlEndpoint: process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT || "",
-});
+// Lazy initialize ImageKit
+function getImageKit() {
+  return new ImageKit({
+    publicKey: process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY || "",
+    privateKey: process.env.IMAGEKIT_PRIVATE_KEY || "",
+    urlEndpoint: process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT || "",
+  });
+}
 
 export async function GET() {
   try {
@@ -18,7 +20,7 @@ export async function GET() {
     }
 
     // Get authentication parameters from ImageKit
-    const authParams = imagekit.getAuthenticationParameters();
+    const authParams = getImageKit().getAuthenticationParameters();
 
     return NextResponse.json(authParams);
   } catch (error) {

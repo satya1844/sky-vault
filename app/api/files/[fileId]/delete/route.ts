@@ -5,12 +5,14 @@ import { files } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import ImageKit from "imagekit";
 
-// Initialize ImageKit with your credentials
-const imagekit = new ImageKit({
-  publicKey: process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY || "",
-  privateKey: process.env.IMAGEKIT_PRIVATE_KEY || "",
-  urlEndpoint: process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT || "",
-});
+// Lazy initialize ImageKit
+function getImageKit() {
+  return new ImageKit({
+    publicKey: process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY || "",
+    privateKey: process.env.IMAGEKIT_PRIVATE_KEY || "",
+    urlEndpoint: process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT || "",
+  });
+}
 
 export async function DELETE(
   request: NextRequest,
@@ -58,7 +60,7 @@ export async function DELETE(
         if (imagekitFileId) {
           try {
             // Try direct deletion with the file ID
-            await imagekit.deleteFile(imagekitFileId);
+            await getImageKit().deleteFile(imagekitFileId);
           } catch (deleteError) {
             console.error(`Error deleting file ${imagekitFileId} from ImageKit:`, deleteError);
             // Don't throw here, continue with database deletion

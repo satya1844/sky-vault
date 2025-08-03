@@ -5,12 +5,14 @@ import { files } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import ImageKit from "imagekit";
 
-// Initialize ImageKit with your credentials
-const imagekit = new ImageKit({
-  publicKey: process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY || "",
-  privateKey: process.env.IMAGEKIT_PRIVATE_KEY || "",
-  urlEndpoint: process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT || "",
-});
+// Lazy initialize ImageKit
+function getImageKit() {
+  return new ImageKit({
+    publicKey: process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY || "",
+    privateKey: process.env.IMAGEKIT_PRIVATE_KEY || "",
+    urlEndpoint: process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT || "",
+  });
+}
 
 export async function DELETE() {
   try {
@@ -50,22 +52,22 @@ export async function DELETE() {
 
           if (imagekitFileId) {
             try {
-              const searchResults = await imagekit.listFiles({
+              const searchResults = await getImageKit().listFiles({
                 name: imagekitFileId,
                 limit: 1,
               });
 
               if (searchResults && 'fileId' in searchResults && typeof searchResults.fileId === 'string') {
-                await imagekit.deleteFile(searchResults.fileId);
+                await getImageKit().deleteFile(searchResults.fileId);
               } else {
-                await imagekit.deleteFile(imagekitFileId);
+                await getImageKit().deleteFile(imagekitFileId);
               }
             } catch (searchError) {
               console.error(
                 `Error searching for file in ImageKit:`,
                 searchError
               );
-              await imagekit.deleteFile(imagekitFileId);
+              await getImageKit().deleteFile(imagekitFileId);
             }
           }
         } catch (error) {

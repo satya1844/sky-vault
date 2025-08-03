@@ -6,12 +6,14 @@ import { eq, and } from "drizzle-orm";
 import ImageKit from "imagekit";
 import { v4 as uuidv4 } from "uuid";
 
-// Initialize ImageKit with your credentials
-const imagekit = new ImageKit({
-  publicKey: process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY || "",
-  privateKey: process.env.IMAGEKIT_PRIVATE_KEY || "",
-  urlEndpoint: process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT || "",
-});
+// Lazy initialize ImageKit
+function getImageKit() {
+  return new ImageKit({
+    publicKey: process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY || "",
+    privateKey: process.env.IMAGEKIT_PRIVATE_KEY || "",
+    urlEndpoint: process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT || "",
+  });
+}
 
 export async function POST(request: NextRequest) {
   console.log("=== File Upload Request Started ===");
@@ -118,7 +120,7 @@ export async function POST(request: NextRequest) {
     });
 
     console.log("Uploading to ImageKit...");
-    const uploadResponse = await imagekit.upload({
+    const uploadResponse = await getImageKit().upload({
       file: fileBuffer,
       fileName: uniqueFilename,
       folder: folderPath,
