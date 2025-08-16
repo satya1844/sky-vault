@@ -42,7 +42,7 @@ const DashboardContent: React.FC<DashboardProps> = ({ user }) => {
   // Callback when a file/folder is created/deleted/uploaded
   const handleActionComplete = useCallback(() => {
     setFileListRefreshTrigger(prev => prev + 1);
-  }, []);
+ye  }, []);
 
   // Search: fetch all files on mount or refresh
   useEffect(() => {
@@ -70,8 +70,7 @@ const DashboardContent: React.FC<DashboardProps> = ({ user }) => {
 
   return (
     <div className="min-h-screen">
-      {/* Topbar with search */}
-      {/* Remove <Topbar ... /> usage from this file */}
+  {/* Topbar is rendered in DashboardLayout, not here */}
 
       {/* Action buttons: Upload, Create Folder */}
       <QuickActions
@@ -85,7 +84,6 @@ const DashboardContent: React.FC<DashboardProps> = ({ user }) => {
       <Recents
         userId={user.id}
         limit={5}
-
       />
 
       {/* Main File List View */}
@@ -94,8 +92,6 @@ const DashboardContent: React.FC<DashboardProps> = ({ user }) => {
         externalRefreshTrigger={fileListRefreshTrigger}
         onFolderChange={handleFolderChange}
       />
-
-      
     </div>
   );
 };

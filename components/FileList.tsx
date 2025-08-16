@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
-import { Folder, Star, Trash, X, ExternalLink, StarIcon, EyeClosed, Filter, Grid, List, MoreVertical } from "lucide-react";
+import { Folder, Star, Trash, X, ExternalLink, StarIcon, EyeClosed, Filter, Grid, List, MoreVertical, Edit } from "lucide-react";
 import { Input } from "@heroui/input";
 import { Button } from "@heroui/button";
 import { Tooltip } from "@heroui/tooltip";
@@ -12,6 +12,7 @@ import { formatDistanceToNow, format } from "date-fns";
 import type { File as FileType } from "@/lib/db/schema";
 import axios from "axios";
 import ConfirmationModal from "@/components/ui/ConfirmationModal";
+import * as Dialog from "@radix-ui/react-dialog";
 import FileEmptyState from "@/components/FileEmptyState";
 import FileIcon from "@/components/FileIcon";
 import FileLoadingState from "@/components/FileLoadingState";
@@ -76,6 +77,97 @@ export default function FileList({
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [emptyTrashModalOpen, setEmptyTrashModalOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<FileType | null>(null);
+  const [renameModalOpen, setRenameModalOpen] = useState(false);
+  const [renameValue, setRenameValue] = useState("");
+  // Rename handler
+  const handleRenameFile = async () => {
+    if (!selectedFile || !renameValue.trim()) return;
+    
+    const trimmedName = renameValue.trim();
+    
+    // Validate name
+    if (trimmedName === selectedFile.name) {
+      setRenameModalOpen(false);
+      setSelectedFile(null);
+      setRenameValue("");
+      return;
+    }
+    
+    if (trimmedName.length === 0) {
+      addToast({
+        title: "Invalid Name",
+        description: "File name cannot be empty.",
+        color: "danger",
+        classNames: toastClassNames
+      });
+      return;
+    }
+    
+    if (trimmedName.length > 255) {
+      addToast({
+        title: "Name Too Long",
+        description: "File name must be less than 255 characters.",
+        color: "danger",
+        classNames: toastClassNames
+      });
+      return;
+    }
+    
+    // Check for invalid characters
+    const invalidChars = /[<>:"/\\|?*]/;
+    if (invalidChars.test(trimmedName)) {
+      addToast({
+        title: "Invalid Characters",
+        description: "File name cannot contain: < > : \" / \\ | ? *",
+        color: "danger",
+        classNames: toastClassNames
+      });
+      return;
+    }
+    
+    try {
+      const response = await axios.patch(`/api/files/${selectedFile.id}/rename`, { name: trimmedName });
+      const updated = response.data;
+      
+      // Update local state
+      setFiles(files.map(f => f.id === selectedFile.id ? { ...f, name: updated.name } : f));
+      
+      // Show success toast
+      addToast({
+        title: "File Renamed",
+        description: `Successfully renamed to "${updated.name}"`,
+        color: "success",
+        classNames: toastClassNames
+      });
+      
+      // Close modal and reset
+      setRenameModalOpen(false);
+      setSelectedFile(null);
+      setRenameValue("");
+    } catch (error: any) {
+      console.error("Error renaming file:", error);
+      const errorMessage = error.response?.data?.error || "Could not rename file. Please try again.";
+      addToast({
+        title: "Rename Failed",
+        description: errorMessage,
+        color: "danger",
+        classNames: toastClassNames
+      });
+    }
+  };
+
+  // Handle Enter key in rename input
+  const handleRenameKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleRenameFile();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      setRenameModalOpen(false);
+      setSelectedFile(null);
+      setRenameValue("");
+    }
+  };
   const [activeMobileMenuId, setActiveMobileMenuId] = useState<string | null>(null);
 
   // Fetch files
@@ -945,6 +1037,19 @@ export default function FileList({
                           </button>
                         </Tooltip>
                       )}
+                      <Tooltip content="Rename">
+                        <button
+                          className="p-1.5 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors pointer-events-auto"
+                          onClick={e => {
+                            e.stopPropagation();
+                            setSelectedFile(file);
+                            setRenameValue(file.name);
+                            setRenameModalOpen(true);
+                          }}
+                        >
+                          <Edit className="w-3.5 h-3.5 text-gray-600" />
+                        </button>
+                      </Tooltip>
                       <Tooltip content={file.isStarred ? "Remove from starred" : "Add to starred"}>
                         <button
                           className="p-1.5 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors pointer-events-auto"
@@ -1017,6 +1122,19 @@ export default function FileList({
                         </button>
                       )}
                       <button
+                        onClick={e => {
+                          e.stopPropagation();
+                          setSelectedFile(file);
+                          setRenameValue(file.name);
+                          setRenameModalOpen(true);
+                          setActiveMobileMenuId(null);
+                        }}
+                        className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                      >
+                        <Edit className="w-4 h-4" />
+                        <span>Rename</span>
+                      </button>
+                      <button
                         onClick={(e) => {
                           e.stopPropagation();
                           handleStarFile(file.id);
@@ -1037,6 +1155,18 @@ export default function FileList({
                       >
                         <Trash className="w-4 h-4" />
                         <span>{file.isTrashed ? 'Restore' : 'Move to trash'}</span>
+                      </button>
+                      <button
+                        onClick={e => {
+                          e.stopPropagation();
+                          setSelectedFile(file);
+                          setRenameValue(file.name);
+                          setRenameModalOpen(true);
+                        }}
+                        className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                      >
+                        <Edit className="w-4 h-4" />
+                        <span>Rename</span>
                       </button>
                       {activeTab === "trash" && (
                         <button
@@ -1176,6 +1306,19 @@ export default function FileList({
                             </button>
                           </Tooltip>
                         )}
+                        <Tooltip content="Rename">
+                          <button
+                            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedFile(file);
+                              setRenameValue(file.name);
+                              setRenameModalOpen(true);
+                            }}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                        </Tooltip>
                         <Tooltip content={file.isStarred ? "Remove from starred" : "Add to starred"}>
                           <button
                             className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
@@ -1243,6 +1386,57 @@ export default function FileList({
         isDangerous={true}
         warningMessage={`You are about to permanently delete "${selectedFile?.name}". This file will be permanently removed from your account and cannot be recovered.`}
       />
+
+      {/* Rename Modal */}
+      <Dialog.Root open={renameModalOpen} onOpenChange={setRenameModalOpen}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 bg-black/40 z-50" />
+          <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-zinc-900 rounded-lg shadow-lg p-6 w-full max-w-md border border-zinc-700">
+            <Dialog.Title className="text-lg font-semibold mb-2 text-gray-900 dark:text-white">
+              Rename {selectedFile?.isFolder ? 'Folder' : 'File'}
+            </Dialog.Title>
+            <Dialog.Description className="mb-4 text-gray-600 dark:text-gray-400">
+              Enter a new name for "{selectedFile?.name}".
+            </Dialog.Description>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Name
+              </label>
+              <input
+                type="text"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-md bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                value={renameValue}
+                onChange={e => setRenameValue(e.target.value)}
+                onKeyDown={handleRenameKeyDown}
+                placeholder="Enter new name"
+                autoFocus
+                maxLength={255}
+              />
+            </div>
+            <div className="flex justify-end gap-3">
+              <Button 
+                variant="flat" 
+                onClick={() => {
+                  setRenameModalOpen(false);
+                  setSelectedFile(null);
+                  setRenameValue("");
+                }}
+                className="px-4 py-2"
+              >
+                Cancel
+              </Button>
+              <Button 
+                color="primary" 
+                onClick={handleRenameFile}
+                disabled={!renameValue.trim() || renameValue.trim() === selectedFile?.name}
+                className="px-4 py-2"
+              >
+                Rename
+              </Button>
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
 
       {/* Empty trash confirmation modal */}
       <ConfirmationModal
