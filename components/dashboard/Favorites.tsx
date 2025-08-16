@@ -100,7 +100,7 @@ export default function Favorites() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   };
 
-  const getRelativeTime = (date: string) => {
+  const getRelativeTime = (date: string | Date) => {
     const now = new Date();
     const fileDate = new Date(date);
     const diffTime = Math.abs(now.getTime() - fileDate.getTime());
@@ -256,7 +256,7 @@ function FileListItem({ file, onUnstar, formatFileSize, getRelativeTime }: FileL
       {/* Modified column - Hidden on mobile */}
       <div className="hidden md:flex col-span-3 items-center">
         <span className="text-gray-400 text-sm">
-          {getRelativeTime(file.updatedAt ? file.updatedAt.toISOString() : file.createdAt.toISOString())}
+          {getRelativeTime(file.updatedAt || file.createdAt)}
         </span>
       </div>
 

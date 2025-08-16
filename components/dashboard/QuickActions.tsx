@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Upload, FolderPlus, Plus, Sparkles } from "lucide-react";
 import { Button } from "@heroui/button";
 import { addToast } from "@heroui/toast";
@@ -46,6 +46,124 @@ export default function QuickActions({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  // AI Suggestions state
+  interface AISuggestion {
+    id: string;
+    label: string;
+    detail: string;
+    action: { type: string; target?: string };
+    priority: number;
+    meta?: any;
+  }
+  const [aiSuggestions, setAiSuggestions] = useState<AISuggestion[]>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+
+  // Fetch heuristic suggestions
+  useEffect(() => {
+    if (!userId) return;
+    let aborted = false;
+    const load = async () => {
+      try {
+        setLoadingSuggestions(true);
+        const res = await fetch(`/api/ai/suggestions?userId=${userId}`);
+        const data = await res.json();
+        if (!aborted) setAiSuggestions(data.suggestions || []);
+      } catch (e) {
+        if (!aborted) setAiSuggestions([]);
+      } finally {
+        if (!aborted) setLoadingSuggestions(false);
+      }
+    };
+    load();
+    return () => {
+      aborted = true;
+    };
+  }, [userId]);
+
+  const refreshSuggestions = async () => {
+    if (!userId) return;
+    setLoadingSuggestions(true);
+    try {
+      const res = await fetch(`/api/ai/suggestions?userId=${userId}`);
+      const data = await res.json();
+      setAiSuggestions(data.suggestions || []);
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  };
+
+  const handleSuggestionAction = (s: AISuggestion) => {
+    if (s.action.type === "NAVIGATE") {
+      // Dispatch a custom event so parent components listening can navigate to root
+      window.dispatchEvent(new CustomEvent("quickactions:navigate", { detail: { target: s.action.target } }));
+    } else if (s.action.type === "OPEN_DEDUPE") {
+      setDuplicateReview({ open: true, suggestion: s });
+    } else if (s.action.type === "OPEN_IMAGES") {
+      setImageTagging({ open: true, suggestion: s });
+    } else if (s.action.type === "OPEN_ARCHIVE") {
+      setArchivePanel({ open: true, suggestion: s });
+    }
+  };
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const toggleExpand = (id: string) => {
+    setExpandedId(prev => (prev === id ? null : id));
+  };
+
+  // Duplicate Review State
+  const [duplicateReview, setDuplicateReview] = useState<{ open: boolean; suggestion: AISuggestion | null }>({ open: false, suggestion: null });
+  const [selectedForDeletion, setSelectedForDeletion] = useState<Record<string, boolean>>({});
+  const toggleSelectDuplicate = (fileId: string) => {
+    setSelectedForDeletion(prev => ({ ...prev, [fileId]: !prev[fileId] }));
+  };
+  const [processingDelete, setProcessingDelete] = useState(false);
+  const executeDuplicateDeletion = async () => {
+    const ids = Object.entries(selectedForDeletion).filter(([, v]) => v).map(([id]) => id);
+    if (!ids.length) return;
+    setProcessingDelete(true);
+    try {
+      for (const id of ids) {
+        await fetch(`/api/files/${id}/delete`, { method: 'DELETE' });
+      }
+      setDuplicateReview({ open: false, suggestion: null });
+      setSelectedForDeletion({});
+      onActionComplete();
+      refreshSuggestions();
+    } catch (e) {
+      console.error('Duplicate deletion failed', e);
+    } finally {
+      setProcessingDelete(false);
+    }
+  };
+
+  // Image Tagging Placeholder
+  const [imageTagging, setImageTagging] = useState<{ open: boolean; suggestion: AISuggestion | null }>({ open: false, suggestion: null });
+  const simulateTagging = async () => {
+    // Placeholder: simulate latency
+    setTaggingProgress(0);
+    for (let p = 0; p <= 100; p += 10) {
+      await new Promise(r => setTimeout(r, 120));
+      setTaggingProgress(p);
+    }
+    setImageTagging({ open: false, suggestion: null });
+  };
+  const [taggingProgress, setTaggingProgress] = useState(0);
+
+  // Archive Panel Placeholder
+  const [archivePanel, setArchivePanel] = useState<{ open: boolean; suggestion: AISuggestion | null }>({ open: false, suggestion: null });
+  const [archiveSelection, setArchiveSelection] = useState<Record<string, boolean>>({});
+  const toggleArchiveSelect = (id: string) => setArchiveSelection(prev => ({ ...prev, [id]: !prev[id] }));
+  const [processingArchive, setProcessingArchive] = useState(false);
+  const simulateArchive = async () => {
+    const ids = Object.entries(archiveSelection).filter(([, v]) => v).map(([id]) => id);
+    if (!ids.length) return;
+    setProcessingArchive(true);
+    // For now just log; in future call an archive API
+    await new Promise(r => setTimeout(r, 800));
+    setProcessingArchive(false);
+    setArchivePanel({ open: false, suggestion: null });
+    setArchiveSelection({});
+    refreshSuggestions();
+  };
 
   // Handle file upload
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -211,7 +329,7 @@ export default function QuickActions({
   };
 
   return (
-    <div className="p-6">
+  <div className="p-6 space-y-6">
       {/* Hidden file input */}
       <input
         ref={fileInputRef}
@@ -287,8 +405,8 @@ export default function QuickActions({
         </div>
       </div>
 
-      {/* Tablet/Desktop: grid layout */}
-      <div className="hidden sm:grid grid-cols-1 sm:grid-cols-3 gap-4">
+  {/* Tablet/Desktop: grid layout */}
+  <div className="hidden sm:grid grid-cols-1 sm:grid-cols-3 gap-4">
         {/* Upload Card */}
         <div
           className={`group relative dark:bg-[#1D1D1D] rounded-2xl border dark:border-white/10  p-6 cursor-pointer transition-all duration-200 hover:border-gray-300 hover:shadow-lg ${isUploading ? 'pointer-events-none opacity-60' : ''}`}
@@ -350,6 +468,180 @@ export default function QuickActions({
           </div>
         </div>
       </div>
+
+      {/* AI Suggestions Panel */}
+      <div className="border dark:border-white/10 rounded-xl p-4 bg-white/50 dark:bg-[#1D1D1D]/60">
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="text-sm font-semibold flex items-center gap-1">
+            <Sparkles className="w-4 h-4" /> Suggestions
+          </h4>
+          <button
+            onClick={refreshSuggestions}
+            disabled={loadingSuggestions}
+            className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline disabled:opacity-40"
+          >
+            {loadingSuggestions ? '…' : 'Refresh'}
+          </button>
+        </div>
+        {loadingSuggestions && aiSuggestions.length === 0 && (
+          <p className="text-xs text-gray-500 dark:text-gray-400">Analyzing your files…</p>
+        )}
+        {!loadingSuggestions && aiSuggestions.length === 0 && (
+          <p className="text-xs text-gray-500 dark:text-gray-400">No suggestions right now.</p>
+        )}
+        <ul className="space-y-2">
+          {aiSuggestions.map(s => (
+            <li key={s.id} className="space-y-1">
+              <div className="flex gap-2">
+                <button
+                  onClick={() => toggleExpand(s.id)}
+                  className="flex-1 text-left px-3 py-2 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition text-xs"
+                >
+                  <span className="block font-medium text-indigo-800 dark:text-indigo-200">{s.label}</span>
+                  <span className="block text-[11px] text-indigo-700 dark:text-indigo-300/80">{s.detail}</span>
+                  {s.meta?.samples || s.meta?.groups ? (
+                    <span className="block text-[10px] mt-1 text-indigo-500 dark:text-indigo-300">{expandedId === s.id ? 'Hide details' : 'Show details'}</span>
+                  ) : null}
+                </button>
+                <button
+                  onClick={() => handleSuggestionAction(s)}
+                  className="px-2 py-2 rounded-lg bg-indigo-600 text-white text-[10px] hover:bg-indigo-500"
+                >Act</button>
+              </div>
+              {expandedId === s.id && (
+                <div className="ml-1 border-l border-indigo-300/30 pl-3 text-[11px] space-y-2">
+                  {s.meta?.groups && (
+                    <div className="space-y-2">
+                      {s.meta.groups.map((g: any, idx: number) => (
+                        <div key={idx} className="bg-indigo-950/30 dark:bg-black/20 rounded p-2">
+                          <p className="font-medium text-indigo-200 mb-1 truncate">{g.name} <span className="text-xs text-indigo-400">({g.count})</span></p>
+                          <ul className="list-disc list-inside space-y-0.5">
+                            {g.files.map((f: any) => (
+                              <li key={f.id} className="truncate">{f.name}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      ))}
+                      {s.meta.totalGroups > s.meta.groups.length && (
+                        <p className="text-[10px] text-indigo-400">+ {s.meta.totalGroups - s.meta.groups.length} more groups…</p>
+                      )}
+                    </div>
+                  )}
+                  {s.meta?.samples && !s.meta.groups && (
+                    <div className="flex flex-wrap gap-1">
+                      {s.meta.samples.map((f: any) => (
+                        <span key={f.id} className="px-2 py-0.5 rounded bg-indigo-800/40 text-indigo-100 truncate max-w-[120px]" title={f.name}>{f.name}</span>
+                      ))}
+                      {s.meta.total > s.meta.samples.length && (
+                        <span className="text-[10px] text-indigo-400">+ {s.meta.total - s.meta.samples.length} more…</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+        <p className="mt-3 text-[10px] text-gray-400">Prototype heuristic suggestions. Will upgrade to real AI later.</p>
+      </div>
+
+      {/* Duplicate Review Inline Panel */}
+      {duplicateReview.open && duplicateReview.suggestion?.meta?.groups && (
+        <div className="border rounded-xl p-4 bg-indigo-950/20 space-y-3">
+          <div className="flex items-center justify-between">
+            <h5 className="text-sm font-semibold text-indigo-300">Duplicate Review</h5>
+            <button className="text-xs text-indigo-400 hover:underline" onClick={() => setDuplicateReview({ open: false, suggestion: null })}>Close</button>
+          </div>
+          <p className="text-[11px] text-indigo-200/80">Select the copies you want to delete. Keep at least one per group.</p>
+          <div className="max-h-56 overflow-auto pr-1 space-y-3">
+            {duplicateReview.suggestion.meta.groups.map((g: any, idx: number) => {
+              // Force at least one keep: disable checkbox if it would remove all
+              const selectedInGroup = g.files.filter((f: any) => selectedForDeletion[f.id]);
+              const allSelected = selectedInGroup.length === g.files.length;
+              return (
+                <div key={idx} className="border border-indigo-600/30 rounded p-2">
+                  <p className="text-indigo-200 text-xs mb-1 font-medium">{g.name} <span className="text-indigo-400">({g.count})</span></p>
+                  <ul className="space-y-1">
+                    {g.files.map((f: any, i: number) => {
+                      const checked = !!selectedForDeletion[f.id];
+                      const disable = !checked && g.files.length - selectedInGroup.length <= 1; // ensure one remains
+                      return (
+                        <li key={f.id} className="flex items-center gap-2 text-[11px]">
+                          <input
+                            type="checkbox"
+                            disabled={disable}
+                            checked={checked}
+                            onChange={() => toggleSelectDuplicate(f.id)}
+                            className="accent-indigo-500"
+                          />
+                          <span className="truncate flex-1" title={f.name}>{f.name}</span>
+                          <span className="text-indigo-400">#{i + 1}</span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              );
+            })}
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            <button
+              onClick={() => { setSelectedForDeletion({}); refreshSuggestions(); }}
+              className="text-xs text-indigo-400 hover:underline"
+            >Reset</button>
+            <button
+              disabled={processingDelete || Object.values(selectedForDeletion).every(v => !v)}
+              onClick={executeDuplicateDeletion}
+              className="px-3 py-1.5 rounded bg-red-600 disabled:opacity-40 text-white text-xs hover:bg-red-500"
+            >{processingDelete ? 'Deleting…' : 'Delete Selected'}</button>
+          </div>
+        </div>
+      )}
+
+      {/* Image Tagging Placeholder Panel */}
+      {imageTagging.open && imageTagging.suggestion?.meta?.samples && (
+        <div className="border rounded-xl p-4 bg-purple-950/20 space-y-3">
+          <div className="flex items-center justify-between">
+            <h5 className="text-sm font-semibold text-purple-300">Image Tagging (Prototype)</h5>
+            <button className="text-xs text-purple-400 hover:underline" onClick={() => setImageTagging({ open: false, suggestion: null })}>Close</button>
+          </div>
+          <p className="text-[11px] text-purple-200/80">Simulating automatic tag generation…</p>
+          <div className="flex flex-wrap gap-1">
+            {imageTagging.suggestion.meta.samples.map((f: any) => (
+              <span key={f.id} className="px-2 py-0.5 bg-purple-800/40 rounded text-purple-100 text-[10px] truncate max-w-[100px]">{f.name}</span>
+            ))}
+          </div>
+          <div className="w-full h-2 bg-purple-900/40 rounded overflow-hidden">
+            <div style={{ width: `${taggingProgress}%` }} className="h-full bg-purple-500 transition-all"></div>
+          </div>
+          <button onClick={simulateTagging} className="px-3 py-1.5 rounded bg-purple-600 text-white text-xs hover:bg-purple-500">{taggingProgress < 100 ? 'Start' : 'Done'}</button>
+        </div>
+      )}
+
+      {/* Archive Panel Placeholder */}
+      {archivePanel.open && archivePanel.suggestion?.meta?.samples && (
+        <div className="border rounded-xl p-4 bg-amber-950/20 space-y-3">
+          <div className="flex items-center justify-between">
+            <h5 className="text-sm font-semibold text-amber-300">Archive Large Files</h5>
+            <button className="text-xs text-amber-400 hover:underline" onClick={() => setArchivePanel({ open: false, suggestion: null })}>Close</button>
+          </div>
+          <p className="text-[11px] text-amber-200/80">Select files to mark for archiving (placeholder action).</p>
+          <ul className="space-y-1 max-h-48 overflow-auto pr-1">
+            {archivePanel.suggestion.meta.samples.map((f: any) => (
+              <li key={f.id} className="flex items-center gap-2 text-[11px]">
+                <input type="checkbox" checked={!!archiveSelection[f.id]} onChange={() => toggleArchiveSelect(f.id)} className="accent-amber-500" />
+                <span className="truncate flex-1" title={f.name}>{f.name}</span>
+                <span className="text-amber-400">{(f.size/1024/1024).toFixed(1)}MB</span>
+              </li>
+            ))}
+          </ul>
+          <button
+            disabled={processingArchive || Object.values(archiveSelection).every(v => !v)}
+            onClick={simulateArchive}
+            className="px-3 py-1.5 rounded bg-amber-600 text-white text-xs hover:bg-amber-500 disabled:opacity-40"
+          >{processingArchive ? 'Archiving…' : 'Archive Selected'}</button>
+        </div>
+      )}
     </div>
   );
 }

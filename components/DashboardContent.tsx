@@ -41,8 +41,7 @@ const DashboardContent: React.FC<DashboardProps> = ({ user }) => {
 
   // Callback when a file/folder is created/deleted/uploaded
   const handleActionComplete = useCallback(() => {
-    setFileListRefreshTrigger(prev => prev + 1);
-ye  }, []);
+    setFileListRefreshTrigger(prev => prev + 1);  }, []);
 
   // Search: fetch all files on mount or refresh
   useEffect(() => {

@@ -79,6 +79,11 @@ export default function FileList({
   const [selectedFile, setSelectedFile] = useState<FileType | null>(null);
   const [renameModalOpen, setRenameModalOpen] = useState(false);
   const [renameValue, setRenameValue] = useState("");
+  // Drag & Drop move state
+  const [draggingFileId, setDraggingFileId] = useState<string | null>(null);
+  const [pendingMove, setPendingMove] = useState<{ fileId: string; targetId: string | null; targetName: string } | null>(null);
+  const [moveConfirmOpen, setMoveConfirmOpen] = useState(false);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
   // Rename handler
   const handleRenameFile = async () => {
     if (!selectedFile || !renameValue.trim()) return;
@@ -166,6 +171,34 @@ export default function FileList({
       setRenameModalOpen(false);
       setSelectedFile(null);
       setRenameValue("");
+    }
+  };
+  const initiateMove = (fileId: string, targetId: string | null, targetName: string) => {
+    if (fileId === targetId) return; // ignore self
+    setPendingMove({ fileId, targetId, targetName });
+    setMoveConfirmOpen(true);
+  };
+  const performMove = async () => {
+    if (!pendingMove) return;
+    try {
+      await axios.patch(`/api/files/${pendingMove.fileId}/move`, { parentId: pendingMove.targetId });
+      addToast({
+        title: 'Moved',
+        description: `Item moved into ${pendingMove.targetName || 'root'}.`,
+        color: 'success',
+        classNames: toastClassNames
+      });
+      setPendingMove(null);
+      setMoveConfirmOpen(false);
+      fetchFiles();
+    } catch (e) {
+      console.error('Move failed', e);
+      addToast({
+        title: 'Move Failed',
+        description: 'Could not move item.',
+        color: 'danger',
+        classNames: toastClassNames
+      });
     }
   };
   const [activeMobileMenuId, setActiveMobileMenuId] = useState<string | null>(null);
@@ -988,12 +1021,34 @@ export default function FileList({
               return (
                 <div
                   key={file.id}
-                  className="group relative aspect-square rounded-2xl border border-white/10 shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 overflow-hidden cursor-pointer bg-gray-800"
+                  className={`group relative aspect-square rounded-2xl border border-white/10 shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 overflow-hidden cursor-pointer bg-gray-800 ${draggingFileId && file.isFolder && file.id !== draggingFileId ? 'ring-2 ring-blue-400 ring-offset-2 ring-offset-black/20' : ''} ${dragOverId === file.id ? 'bg-blue-500/20' : ''}`}
                   onClick={(e) => {
                     console.log('DIV clicked for file:', file.name);
                     console.log('Event target:', e.target);
                     console.log('Event current target:', e.currentTarget);
                     handleItemClick(file);
+                  }}
+                  draggable
+                  onDragStart={(e) => {
+                    e.stopPropagation();
+                    setDraggingFileId(file.id);
+                  }}
+                  onDragEnd={() => { setDraggingFileId(null); setDragOverId(null); }}
+                  onDragOver={(e) => {
+                    if (draggingFileId && file.isFolder && file.id !== draggingFileId) {
+                      e.preventDefault();
+                      if (dragOverId !== file.id) setDragOverId(file.id);
+                    }
+                  }}
+                  onDragLeave={(e) => {
+                    if (dragOverId === file.id) setDragOverId(null);
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    if (draggingFileId && file.isFolder && file.id !== draggingFileId) {
+                      setDragOverId(null);
+                      initiateMove(draggingFileId, file.id, file.name);
+                    }
                   }}
                 >
                   {/* Background image or icon */}
@@ -1229,10 +1284,10 @@ export default function FileList({
             {/* Table Header */}
             <div className="bg-[#1d1d1d] border-b border-white/10 px-4 py-3">
               <div className="flex items-center text-xs font-medium text-white uppercase tracking-wider">
-                <div className="flex-1">Name</div>
+                <div className="flex-1 pr-2">Name</div>
                 <div className="w-32 text-right">Modified</div>
                 <div className="w-24 text-right">Size</div>
-                <div className="w-16"></div>
+                <div className="w-40 text-right">Actions</div>
               </div>
             </div>
 
@@ -1244,12 +1299,29 @@ export default function FileList({
                 return (
                   <div
                     key={file.id}
-                    className="group flex items-center px-4 py-3 hover:border hover:border-white/80 cursor-pointer transition-colors"
+                    className={`group flex items-center px-4 py-3 hover:border hover:border-white/80 cursor-pointer transition-colors ${draggingFileId && file.isFolder ? 'bg-white/5' : ''}`}
                     onClick={(e) => {
                       console.log('List item clicked for file:', file.name);
                       e.preventDefault();
                       e.stopPropagation();
                       handleItemClick(file);
+                    }}
+                    draggable
+                    onDragStart={(e) => {
+                      e.stopPropagation();
+                      setDraggingFileId(file.id);
+                    }}
+                    onDragEnd={() => setDraggingFileId(null)}
+                    onDragOver={(e) => {
+                      if (draggingFileId && file.isFolder) {
+                        e.preventDefault();
+                      }
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      if (draggingFileId && file.isFolder) {
+                        initiateMove(draggingFileId, file.id, file.name);
+                      }
                     }}
                   >
                     {/* File Icon/Thumbnail and Name */}
@@ -1291,8 +1363,8 @@ export default function FileList({
                     </div>
 
                     {/* Actions */}
-                    <div className="w-16 flex items-center justify-end">
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                    <div className="w-40 flex-shrink-0 flex items-center justify-end">
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 flex-wrap">
                         {!file.isFolder && (
                           <Tooltip content="Download">
                             <button
@@ -1437,6 +1509,19 @@ export default function FileList({
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
+
+      {/* Move Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={moveConfirmOpen}
+        onOpenChange={(open) => { if(!open) { setMoveConfirmOpen(false); setPendingMove(null);} }}
+        title="Move item?"
+        description={pendingMove ? `Move this item into "${pendingMove.targetName || 'root'}"?` : ''}
+        icon={Folder}
+        iconColor="text-blue-500"
+        confirmText="Move"
+        confirmColor="primary"
+        onConfirm={performMove}
+      />
 
       {/* Empty trash confirmation modal */}
       <ConfirmationModal
