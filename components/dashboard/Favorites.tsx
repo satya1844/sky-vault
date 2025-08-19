@@ -256,7 +256,7 @@ function FileListItem({ file, onUnstar, formatFileSize, getRelativeTime }: FileL
       {/* Modified column - Hidden on mobile */}
       <div className="hidden md:flex col-span-3 items-center">
         <span className="text-gray-400 text-sm">
-          {getRelativeTime(file.updatedAt || file.createdAt)}
+          {getRelativeTime((file.updatedAt || file.createdAt)?.toString())}
         </span>
       </div>
 

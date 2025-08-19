@@ -3,7 +3,8 @@ import { db } from "@/lib/db";
 import { files } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 
-export async function PATCH(req: NextRequest, { params }: { params: { fileId: string } }) {
+export async function PATCH(req: NextRequest, context: any) {
+  const { params } = context;
   const { name } = await req.json();
   if (!name || !params.fileId) {
     return NextResponse.json({ error: "Missing name or fileId" }, { status: 400 });
