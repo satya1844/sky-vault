@@ -30,6 +30,7 @@ export default function LandingPage() {
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
+        
       }}
     >
       {/* Content */}

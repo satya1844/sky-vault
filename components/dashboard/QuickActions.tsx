@@ -179,7 +179,9 @@ export default function QuickActions({
       'application/pdf',
       'application/msword',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'text/plain'
+      'text/plain',
+      'text/markdown',
+      'text/csv'
     ];
 
     for (const file of selectedFiles) {

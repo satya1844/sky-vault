@@ -77,15 +77,23 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // File type validation
-    console.log("Validating file type...");
-    const isValidType = file.type.startsWith("image/") || file.type === "application/pdf";
-    console.log("File type valid:", isValidType);
+    // File type validation (expanded)
+    console.log("Validating file type...", file.type);
+    const allowedExact = new Set([
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    ]);
+    const isValidType =
+      file.type.startsWith("image/") ||
+      file.type.startsWith("text/") ||
+      allowedExact.has(file.type);
+    console.log("File type valid:", isValidType, "evaluated for", file.type);
 
     if (!isValidType) {
       console.log("❌ Invalid file type:", file.type);
       return NextResponse.json(
-        { error: "Only image files and PDFs are supported" },
+        { error: "Only images, PDFs, Word docs and text files are supported" },
         { status: 400 }
       );
     }
