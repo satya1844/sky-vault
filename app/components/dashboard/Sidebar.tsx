@@ -114,7 +114,7 @@ export const DesktopSidebar = ({
     <>
       <motion.div
         className={cn(
-          "sticky bg-[#1D1D1D] rounded-[35px] top-0 h-screen m-5 px-4 py-4 hidden lg:flex lg:flex-col w-[300px] shrink-0",
+          "sticky bg-[#1D1D1D] rounded-[35px] top-0 h-max m-5 px-4 py-4 hidden my-20 lg:flex lg:flex-col w-[300px] shrink-0",
           className
         )}
         animate={{

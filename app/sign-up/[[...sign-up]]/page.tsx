@@ -1,25 +1,34 @@
 import SignUpForm from "@/components/signUpForm";
 import Image from "next/image";
 import "@/styles/globals.css";
+import { BackgroundBeams } from "@/components/ui/background-beams";
 
 export default function SignUpPage() {
   return (
-    <div className="min-h-screen relative bg-background overflow-hidden">
-      <main className="relative z-10 flex-1 flex justify-center items-center p-6">
-        <SignUpForm />
-      </main>
-
-      {/* Blue background image */}
-      <div className="absolute bottom-0 left-0 right-0 w-full z-0">
-              <Image 
-                src="/blue-bg.png" 
-                alt="Blue wave background"
-                width={1920}
-                height={1080}
-                className="w-full"
+    <div className="h-screen relative overflow-hidden">
+      <main className="h-screen flex items-center justify-center">
+        <div className="flex w-full h-full">
+          {/* Image Section with White Background */}
+          <div className="hidden lg:flex lg:w-1/2 items-center justify-center bg-white">
+            <div className="relative w-full h-full">
+              <Image
+                src="/exoplanet.png"
+                alt="Exoplanet"
+                fill
+                className="object-cover"
                 priority
               />
             </div>
+          </div>
+          
+          {/* Form Section */}
+          <div className="w-full lg:w-1/2 flex items-center justify-center">
+            <SignUpForm />
+          </div>
+        </div>
+      </main>
+
+      <BackgroundBeams />
     </div>
   );
 }

@@ -92,16 +92,16 @@ export default function SignInForm() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-5 bg-background relative overflow-hidden">
+    <div className="min-h-screen flex flex-col items-center justify-center p-5 bg-transparent relative overflow-hidden text-white">
       {/* Sky Vault Logo */}
        <div className="mb-6 text-center">
         <div className="w-16 h-16 rounded-full mx-auto mb-4"></div>
         <h2 className="text-4xl font-bold text-white">sky vault</h2>
       </div>
 
-      <Card className="w-full max-w-md border-none rounded-2xl bg-white shadow-xl z-10">
+      <Card className="w-full max-w-md border-none rounded-2xl bg-transparent shadow-xl z-10 text-white">
   <CardHeader className="flex flex-col gap-1 items-center">
-    <h1 className="text-2xl font-bold text-black">Welcome Back!</h1>
+    <h1 className="text-2xl font-bold text-white">Welcome Back!</h1>
   </CardHeader>
 
   <Divider className="bg-border" />
@@ -114,7 +114,7 @@ export default function SignInForm() {
       </div>
     )}
     {resetEmailSent && (
-      <div className="bg-blue-900 text-blue-200 p-4 rounded-lg mb-6 flex flex-col gap-2">
+      <div className="bg-green-900 text-green-200 p-4 rounded-lg mb-6 flex flex-col gap-2">
         <div className="flex items-center gap-2">
           <CheckCircle className="h-5 w-5 flex-shrink-0" />
           <p>Reset code has been sent to your email.</p>
@@ -122,7 +122,7 @@ export default function SignInForm() {
         <Button
           type="button"
           onClick={() => router.push("/reset-password")}
-          className="text-sm text-blue-400 hover:text-blue-300 font-medium"
+          className="text-sm text-green-400 hover:text-green-300 font-medium"
         >
           Click here to enter your reset code
         </Button>
@@ -196,7 +196,13 @@ export default function SignInForm() {
               setAuthError("Please enter your email address first.");
             }
           }}
-          className="text-sm text-black hover:underline"
+          className="text-sm text-white hover:underline "style={{
+            background: 'linear-gradient(90deg, #1d4ed8, #2563eb, #3b82f6)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+            display: 'inline-block',
+          }}
         >
           Forgot password?
         </button>
@@ -204,26 +210,24 @@ export default function SignInForm() {
 
       <button
         type="submit"
-        className="w-full rounded-full bg-black text-white py-3 font-medium hover:bg-black/90 disabled:opacity-70"
+        className="relative overflow-hidden font-quicksand bg-transparent text-black hover:text-white border border-white transition-all duration-500 px-8 py-3 rounded-full text-lg tracking-wide hover:shadow-lg before:content-[''] before:absolute before:inset-0 before:bg-white before:pointer-events-none before:transition-transform before:duration-700 before:ease-[cubic-bezier(0.22,1,0.36,1)] hover:before:translate-y-full before:-z-10"
         disabled={isSubmitting}
       >
-        {isSubmitting ? "Signing in..." : "Sign In"}
+        <span className="relative z-10">{isSubmitting ? "Signing in..." : "Sign In"}</span>
       </button>
     </form>
   </CardBody>
 
   <CardFooter className="flex justify-center py-6">
+    new to Sky Vault?{"   "}
     <Link
       href="/sign-up"
-      className="text-white py-2 px-8 rounded-full bg-[#3B82F6] hover:bg-[#2563EB] font-medium transition-all"
+      className="relative overflow-hidden font-quicksand bg-transparent text-white hover:text-black border border-white transition-all duration-500  mx-2.5 px-4 py-2 rounded-full tracking-wide hover:shadow-lg before:content-[''] before:absolute before:inset-0 before:bg-white before:pointer-events-none before:transition-transform before:duration-700 before:ease-[cubic-bezier(0.22,1,0.36,1)] before:translate-y-full hover:before:translate-y-0 before:-z-10"
     >
-      Sign up
+      <span className="relative z-10">Sign up</span>
     </Link>
   </CardFooter>
 </Card>
-
-      {/* Blue curved background at bottom */}
-      <div className="absolute bottom-0 left-0 right-0 h-[40%] bg-[#3B82F6] rounded-t-[50%] -z-10"></div>
     </div>
   );
 }

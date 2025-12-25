@@ -243,7 +243,7 @@ export default function Recents({ userId, limit = 20, refreshTrigger = 0 }: Rece
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-3 md:gap-4">
         {recentFiles.length === 0 ? (
           <div className="col-span-full text-center text-gray-500 dark:text-gray-400 italic py-8">
-            Upload something, man! 🤘📂
+            Upload something, human!
           </div>
         ) : (
           recentFiles.map((file) => {

@@ -55,8 +55,17 @@ export default function LandingPage() {
       </nav> */}
 
       <section className="flex flex-col items-center justify-center min-h-[calc(100vh-80px)] max-w-5xl mx-auto px-6 text-center relative z-10">
-        <div className="max-w-3xl">
-          <h1 className={`${pacifico.className} text-4xl md:text-8xl font-bold text-white tracking-wider leading-tight border-amber-950`}>
+        <div className="max-w-3xl mt-32">
+          <h1 
+            className={`${pacifico.className} text-4xl md:text-8xl font-bold tracking-wider leading-tight pb-6`}
+            style={{
+              background: 'linear-gradient(90deg, #1e3a8a, #1e40af, #1d4ed8, #2563eb, #3b82f6)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+              display: 'inline-block',
+            }}
+          >
             SkyVault
           </h1>
           <p className="font-sans mt-4 text-3xl text-gray-600 tracking-wide">
@@ -65,15 +74,15 @@ export default function LandingPage() {
           <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
             <Button
               
-              className="font-quicksand flex items-center space-x-2 border border-gray-200 text-gray-900 hover:bg-white transition-colors px-8 py-3 rounded-full text-lg uppercase tracking-wide"
+              className="relative overflow-hidden font-quicksand bg-transparent text-black border border-white transition-all duration-500 px-8 py-3 rounded-full text-lg tracking-wide hover:shadow-lg before:content-[''] before:absolute before:inset-0 before:bg-white before:pointer-events-none before:transition-transform before:duration-700 before:ease-[cubic-bezier(0.22,1,0.36,1)] hover:before:translate-y-full [&:hover_a]:bg-gradient-to-r [&:hover_a]:from-[#1e3a8a] [&:hover_a]:via-[#2563eb] [&:hover_a]:to-[#3b82f6] [&:hover_a]:bg-clip-text [&:hover_a]:text-transparent"
             >
-              <Link  href="/get-started">Get Started</Link>
+              <Link href="/get-started" className="relative z-10 transition-all duration-500">Get Started</Link>
             </Button>
             <Button
               
-              className="font-quicksand flex items-center space-x-2 border border-gray-200 text-gray-900 hover:bg-blue-300 transition-colors px-8 py-3 rounded-full text-lg uppercase tracking-wide"
+              className="relative overflow-hidden font-quicksand bg-transparent text-black border border-white transition-all duration-500 px-8 py-3 rounded-full text-lg tracking-wide hover:shadow-lg before:content-[''] before:absolute before:inset-0 before:bg-white before:pointer-events-none before:transition-transform before:duration-700 before:ease-[cubic-bezier(0.22,1,0.36,1)] hover:before:translate-y-full [&:hover_a]:bg-gradient-to-r [&:hover_a]:from-[#1e3a8a] [&:hover_a]:via-[#2563eb] [&:hover_a]:to-[#3b82f6] [&:hover_a]:bg-clip-text [&:hover_a]:text-transparent"
             >
-              <Link href="/sign-in">Sign In</Link>
+              <Link href="/sign-in" className="relative z-10 transition-all duration-500">Sign In</Link>
             </Button>
           </div>
         </div>

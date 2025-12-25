@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { Noto_Sans, Quicksand } from "next/font/google";
+import { Hanken_Grotesk, Quicksand } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Providers } from "./providers";
 import "@/styles/globals.css";
 
-const notoSans = Noto_Sans({
+const hankenGrotesk = Hanken_Grotesk({
   subsets: ["latin"],
   variable: "--font-sans",
   weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
@@ -30,7 +30,7 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en">
         <body
-          className={`${notoSans.variable} ${quicksand.variable} antialiased bg-background text-foreground`}
+          className={`${hankenGrotesk.variable} ${quicksand.variable} antialiased bg-background text-foreground`}
         >
           <Providers>{children}</Providers>
         </body>

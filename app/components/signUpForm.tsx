@@ -28,6 +28,9 @@ export default function SignUpForm() {
   const [authError, setAuthError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [verificationCode, setVerificationCode] = useState("");
+  const [verificationError, setVerificationError] = useState<string | null>(null);
 
   const {
     register,
@@ -55,7 +58,9 @@ export default function SignUpForm() {
         await setActive({ session: result.createdSessionId });
         router.push("/dashboard");
       } else {
-        setAuthError("An unexpected error occurred during sign-up.");
+        // Trigger email verification flow
+        await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
+        setVerifying(true);
       }
     } catch (error: any) {
       setAuthError(
@@ -67,17 +72,122 @@ export default function SignUpForm() {
     }
   };
 
+  const handleVerificationSubmit = async (
+    e: React.FormEvent<HTMLFormElement>
+  ) => {
+    e.preventDefault();
+    if (!isLoaded || !signUp) return;
+
+    setIsSubmitting(true);
+    setVerificationError(null);
+
+    try {
+      const result = await signUp.attemptEmailAddressVerification({
+        code: verificationCode,
+      });
+
+      if (result.status === "complete") {
+        await setActive({ session: result.createdSessionId });
+        router.push("/dashboard");
+      } else {
+        setVerificationError(
+          "Verification could not be completed. Please try again."
+        );
+      }
+    } catch (error: any) {
+      setVerificationError(
+        error.errors?.[0]?.message ||
+          "An error occurred during verification. Please try again."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (verifying) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-5 bg-background relative overflow-hidden">
+        <Card className="w-full max-w-md border-none rounded-2xl bg-white shadow-xl z-10">
+          <CardHeader className="flex flex-col gap-1 items-center pb-2">
+            <h1 className="text-2xl font-bold text-black">Verify Your Email</h1>
+            <p className="text-default-500 text-center">
+              We've sent a verification code to your email
+            </p>
+          </CardHeader>
+
+          <Divider className="bg-border" />
+
+          <CardBody className="py-6">
+            {verificationError && (
+              <div className="bg-red-100 text-red-700 p-4 rounded-lg mb-6 flex items-center gap-2">
+                <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                <p>{verificationError}</p>
+              </div>
+            )}
+
+            <form onSubmit={handleVerificationSubmit} className="space-y-6">
+              <div className="space-y-2">
+                <label
+                  htmlFor="verificationCode"
+                  className="text-sm font-medium text-black"
+                >
+                  Verification Code
+                </label>
+                <Input
+                  id="verificationCode"
+                  type="text"
+                  placeholder="Enter the 6-digit code"
+                  value={verificationCode}
+                  onChange={(e) => setVerificationCode(e.target.value)}
+                  className="w-full bg-[#D9D9D9] text-black rounded-lg border-none focus:ring-2 focus:ring-primary focus:outline-none placeholder:text-gray-400"
+                  autoFocus
+                />
+              </div>
+
+              <Button
+                type="submit"
+                color="primary"
+                className="w-full"
+                isLoading={isSubmitting}
+              >
+                {isSubmitting ? "Verifying..." : "Verify Email"}
+              </Button>
+            </form>
+
+            <div className="mt-6 text-center">
+              <p className="text-sm text-default-500">
+                Didn't receive a code?{" "}
+                <button
+                  onClick={async () => {
+                    if (signUp) {
+                      await signUp.prepareEmailAddressVerification({
+                        strategy: "email_code",
+                      });
+                    }
+                  }}
+                  className="text-primary hover:underline font-medium"
+                >
+                  Resend code
+                </button>
+              </p>
+            </div>
+          </CardBody>
+        </Card>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-5 bg-background relative overflow-hidden">
+    <div className="min-h-screen flex flex-col items-center justify-center p-5 relative overflow-hidden text-white">
       {/* Sky Vault Logo */}
       <div className="mb-6 text-center">
-        <div className="w-16 h-16 bg-gray-200 rounded-full mx-auto mb-4"></div>
+        <div className="w-16 h-16 rounded-full mx-auto mb-4"></div>
         <h2 className="text-4xl font-bold text-white">sky vault</h2>
       </div>
       
-      <Card className="w-full max-w-md border-none rounded-2xl bg-white shadow-xl z-10">
+      <Card className="w-full max-w-md border-none rounded-2xl bg-transparent shadow-xl z-10 text-white">
         <CardHeader className="flex flex-col gap-1 items-center pb-2">
-          <h1 className="text-2xl font-bold text-black">Create Your Account</h1>
+          <h1 className="text-2xl font-bold text-white">Create Your Account</h1>
         </CardHeader>
 
 
@@ -166,29 +276,25 @@ export default function SignUpForm() {
               />
             </div>
             <div id="clerk-captcha" data-clerk-captcha></div>
-            <Button
+            <button
               type="submit"
-
-              className="w-full rounded-2xl bg-black text-center cursor-pointer hover:bg-black text-white"
-              isLoading={isSubmitting}
+              className="relative overflow-hidden font-quicksand bg-transparent text-black hover:text-white border border-white transition-all duration-500 px-8 py-3 rounded-full text-lg tracking-wide hover:shadow-lg before:content-[''] before:absolute before:inset-0 before:bg-white before:pointer-events-none before:transition-transform before:duration-700 before:ease-[cubic-bezier(0.22,1,0.36,1)] hover:before:translate-y-full before:-z-10"
+              disabled={isSubmitting}
             >
-              {isSubmitting ? "Creating account..." : "Create Account"}
-            </Button>
+              <span className="relative z-10">{isSubmitting ? "Creating account..." : "Create Account"}</span>
+            </button>
           </form>
         </CardBody>
         
-        <CardFooter className="flex justify-center py-4">
-          <p className="text-sm text-secondary-foreground">
-            Already have an account?{' '}
-            <Link href="/sign-in" className="text-primary text-black py-2 px-4 rounded-2xl m-5 bg-[#3B82F6] hover:translate-y-1 font-medium">
-              Sign in
-            </Link>
-          </p>
+        <CardFooter className="flex justify-center py-6">
+         Already have an account?{"   "} <Link
+            href="/sign-in"
+            className="relative overflow-hidden font-quicksand bg-transparent text-white hover:text-black border border-white transition-all duration-500 px-4 py-2 rounded-full tracking-wide hover:shadow-lg before:content-[''] before:absolute before:inset-0 before:bg-white before:pointer-events-none  mx-2.5 before:transition-transform before:duration-700 before:ease-[cubic-bezier(0.22,1,0.36,1)] before:translate-y-full hover:before:translate-y-0 before:-z-10"
+          >
+            <span className="relative z-10">Sign in</span>
+          </Link>
         </CardFooter>
       </Card>
-      
-      {/* Blue curved background at bottom */}
-      <div className="absolute bottom-0 left-0 right-0 h-[40%] bg-primary rounded-t-[50%] -z-10"></div>
     </div>
   );
 }
