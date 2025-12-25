@@ -1,6 +1,6 @@
 import { Button } from "@heroui/button";
 import Link from "next/link";
-import { UploadCloud, Lock, Bot, Users, Link2, MessageSquare } from 'lucide-react';
+import { UploadCloud, Lock, Bot } from 'lucide-react';
 import { SignedIn, SignedOut } from "@clerk/nextjs";
 
 export default function GetStartedPage() {
@@ -16,35 +16,27 @@ export default function GetStartedPage() {
       icon: <Lock className="w-16 h-16 text-blue-500" />
     },
     {
-      title: "AI-Powered Auto-Tagging (coming soon)",
-      description: "Skip the manual sorting. Our smart AI scans your files and adds searchable tags automatically — so you find what you need, instantly.",
+      title: "Chatbot Assistant",
+      description: "Ask questions and get quick help with your files through the built-in chatbot.",
       icon: <Bot className="w-16 h-16 text-blue-500" />
-    },
-    {
-      title: "Real-Time Collaboration (coming soon)",
-      description: "Work with teammates in shared folders, leave comments, and stay in sync without endless email threads.",
-      icon: <Users className="w-16 h-16 text-blue-500" />
-    },
-    {
-      title: "Time-Limited Sharing Links",
-      description: "Easily share any file or folder with a link that expires when you say so. Perfect for clients, colleagues, or quick feedback.",
-      icon: <Link2 className="w-16 h-16 text-blue-500" />
-    },
-    {
-      title: "File Annotations (coming soon)",
-      description: "Mark up images, add notes to files, and keep the feedback loop right where the work happens.",
-      icon: <MessageSquare className="w-16 h-16 text-blue-500" />
     }
   ];
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center bg-background text-white text-center">
+    <div
+      className="min-h-screen w-full flex flex-col items-center justify-center text-white text-center relative overflow-hidden"
+      style={{
+        backgroundColor: '#485461',
+        backgroundImage: 'linear-gradient(315deg, #485461 0%, #28313b 74%)',
+      }}
+    >
+
       <div className="container mx-auto px-6 py-16 text-center">
         <h1 className="text-5xl md:text-5xl font-bold font-quicksand mt-10 mb-4">
            Welcome to SkyVault!
         </h1>
         <p className="text-lg max-w-3xl mx-auto mb-12">
-          Sky Vault is your all-in-one cloud workspace designed to make file management smarter and collaboration smoother. Whether you're uploading a single document or managing entire project folders, Sky Vault has you covered with powerful features and a beautifully simple interface.
+          Sky Vault is your all-in-one cloud workspace designed to make file management faster and simpler. Whether you're uploading a single document or managing entire project folders, Sky Vault has you covered with powerful features and a beautifully simple interface.
         </p>
       </div>
 
@@ -81,9 +73,14 @@ export default function GetStartedPage() {
           </Button>
           </SignedOut>
           <SignedIn>
-            <Button className="font-quicksand bg-blue-600 text-white hover:bg-blue-700 transition-colors px-8 py-3 rounded-full text-lg uppercase tracking-wide">
-              <Link href="/dashboard">Go to Dashboard</Link>
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button className="font-quicksand bg-blue-600 text-white hover:bg-blue-700 transition-colors px-8 py-3 rounded-full text-lg uppercase tracking-wide">
+                <Link href="/dashboard">Go to Dashboard</Link>
+              </Button>
+              <Button className="font-quicksand bg-purple-600 text-white hover:bg-purple-700 transition-colors px-8 py-3 rounded-full text-lg uppercase tracking-wide">
+                <Link href="/dashboard/chatbot">Open Chatbot</Link>
+              </Button>
+            </div>
           </SignedIn>
         </div>
       </div>

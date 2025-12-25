@@ -1,24 +1,38 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 import { files } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
-export async function PATCH(req: NextRequest, context: any) {
-  const { params } = context;
-  const { name } = await req.json();
-  if (!name || !params.fileId) {
-    return NextResponse.json({ error: "Missing name or fileId" }, { status: 400 });
-  }
-  
+export async function PATCH(
+  req: NextRequest,
+  props: { params: Promise<{ fileId: string }> }
+) {
   try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { fileId } = await props.params;
+    const body = await req.json().catch(() => ({}));
+    const name = typeof body?.name === "string" ? body.name.trim() : "";
+
+    if (!fileId || !name) {
+      return NextResponse.json(
+        { error: "Missing or invalid name or fileId" },
+        { status: 400 }
+      );
+    }
+
     const database = db();
     const [updated] = await database
       .update(files)
       .set({ 
-        name: name.trim(),
+        name,
         updatedAt: new Date()
       })
-      .where(eq(files.id, params.fileId))
+      .where(and(eq(files.id, fileId), eq(files.userId, userId)))
       .returning();
     
     if (!updated) {
