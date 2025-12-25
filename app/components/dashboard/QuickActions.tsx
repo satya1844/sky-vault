@@ -58,6 +58,25 @@ export default function QuickActions({
   const [aiSuggestions, setAiSuggestions] = useState<AISuggestion[]>([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
 
+  // Fetch AI-driven suggestions for the current folder
+  const refreshSuggestions = async () => {
+    setLoadingSuggestions(true);
+    try {
+      const { data } = await axios.get("/api/ai/suggestions", {
+        params: { userId, folderId: currentFolderId },
+      });
+      setAiSuggestions(data?.suggestions ?? []);
+    } catch (error) {
+      console.error("Failed to fetch AI suggestions", error);
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  };
+
+  useEffect(() => {
+    refreshSuggestions();
+  }, [currentFolderId]);
+
   // Fetch heuristic suggestions
   
  
