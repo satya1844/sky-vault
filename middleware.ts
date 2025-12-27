@@ -10,52 +10,25 @@ const isPublicRoute = createRouteMatcher([
   "/get-started(.*)",
 ]);
 
-// Middleware with defensive logging to help diagnose 500 errors in production.
+const authFlowRoutes = ["/reset-password", "/sign-in", "/sign-up"];
+
+// Minimal middleware: redirect signed-in users away from public pages
+// and protect non-public routes. No debug logging or extra headers.
 export default clerkMiddleware(async (auth, request) => {
-  const start = Date.now();
-  const debugEnabled = process.env.MW_DEBUG === "1";
-  let phase = "start";
-  try {
-  const authObj = await auth();
-  const { userId } = authObj;
-    const url = new URL(request.url);
+  const { userId } = await auth();
+  const url = new URL(request.url);
 
-    if (debugEnabled) {
-      console.log("[middleware] incoming", {
-        path: url.pathname,
-        userId: userId ?? null,
-        public: isPublicRoute(request),
-        env: {
-          clerkPub: !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
-          clerkSecret: !!process.env.CLERK_SECRET_KEY,
-        },
-      });
-    }
-
-    if (userId && isPublicRoute(request) && url.pathname !== "/") {
-      phase = "redirect-dashboard";
-      const res = NextResponse.redirect(new URL("/dashboard", request.url));
-      res.headers.set("x-mw-state", phase);
-      return res;
-    }
-
-    if (!isPublicRoute(request)) {
-      phase = "protect";
-  await auth.protect();
-    }
-
-    phase = "pass";
-    const res = NextResponse.next();
-    res.headers.set("x-mw-state", phase);
-    res.headers.set("x-mw-dur", String(Date.now() - start));
-    return res;
-  } catch (err: any) {
-    console.error("[middleware] error", { message: err?.message, stack: err?.stack });
-    const res = NextResponse.next();
-    res.headers.set("x-mw-error", "1");
-    res.headers.set("x-mw-state", phase + "-error");
-    return res;
+  if (userId && isPublicRoute(request) && !authFlowRoutes.includes(url.pathname)) {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   }
+
+  if (!isPublicRoute(request)) {
+    await auth.protect({
+      unauthenticatedUrl: `${url.origin}/sign-in?redirect_url=${encodeURIComponent(url.pathname + url.search)}`,
+    });
+  }
+
+  return NextResponse.next();
 });
 
 export const config = {

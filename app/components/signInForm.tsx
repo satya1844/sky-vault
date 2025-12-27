@@ -4,13 +4,17 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useSignIn, useClerk } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
+import { OAuthStrategy } from "@clerk/types";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { z } from "zod";
+
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
 import { Card, CardBody, CardHeader, CardFooter } from "@heroui/card";
 import { Divider } from "@heroui/divider";
+import {Github, Chrome} from "lucide-react";
+
 import {
   Mail,
   Lock,
@@ -23,6 +27,7 @@ import { signInSchema } from "@/schemas/signInSchema";
 
 export default function SignInForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { signIn, isLoaded, setActive } = useSignIn();
   const { client } = useClerk();
 
@@ -31,6 +36,7 @@ export default function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [resetEmailSent, setResetEmailSent] = useState(false);
 
+  const [oAuthLoading, setOAuthLoading] = useState<string | null>(null);
   const {
     register,
     handleSubmit,
@@ -58,7 +64,8 @@ export default function SignInForm() {
 
       if (result.status === "complete") {
         await setActive({ session: result.createdSessionId });
-        router.push("/dashboard");
+        const redirectUrl = searchParams.get('redirect_url') || '/dashboard';
+        router.push(redirectUrl);
       } else {
         setAuthError("Sign-in could not be completed. Please try again.");
       }
@@ -90,6 +97,31 @@ export default function SignInForm() {
       setIsSubmitting(false);
     }
   };
+
+
+  const handleOAuthSignIn = async (strategy: OAuthStrategy) => {
+    try{
+      setOAuthLoading(strategy);
+      setIsSubmitting(true);
+      setAuthError(null);
+    const redirectUrl = searchParams.get('redirect_url') || '/dashboard';
+
+    await signIn?.authenticateWithRedirect({
+      strategy: strategy,
+      redirectUrl: redirectUrl,
+      redirectUrlComplete: redirectUrl,
+    });
+    router.push(redirectUrl);
+    }catch (error: any) {
+    console.error("OAuth error:", error);
+    setAuthError(
+      error.errors?.[0]?.message ||
+        "An error occurred during OAuth sign-up. Please try again."
+    );
+  } finally {
+    setOAuthLoading(null);
+  }
+  }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-5 bg-transparent relative overflow-hidden text-white">
@@ -215,8 +247,46 @@ export default function SignInForm() {
       >
         <span className="relative z-10">{isSubmitting ? "Signing in..." : "Sign In"}</span>
       </button>
+
+
+{/* OAuth Sign In Buttons */}
+
+<div className="mt-3">
+              <div className="flex items-center gap-4 mb-3">
+                <div className="flex-1 h-px bg-gray-500"></div>
+                <span className="text-sm text-gray-400">Or continue with</span>
+                <div className="flex-1 h-px bg-gray-500"></div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => handleOAuthSignIn("oauth_google")}
+                  disabled={oAuthLoading !== null}
+                  className=" cursor-pointer relative overflow-hidden font-quicksand bg-transparent text-black hover:text-white border border-white transition-all duration-500 px-8 py-3 rounded-full text-lg tracking-wide hover:shadow-lg before:content-[''] before:absolute before:inset-0 before:bg-white before:pointer-events-none before:transition-transform before:duration-700 before:ease-[cubic-bezier(0.22,1,0.36,1)] hover:before:translate-y-full before:-z-10"
+                >
+                  <span className="relative z-10 text-black align-middle justify-center flex hover:text-white">
+                    {oAuthLoading === "oauth_google" ? "Signing up..." : <Chrome/>}
+                  </span>
+                  
+                  
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleOAuthSignIn("oauth_github")}
+                  disabled={oAuthLoading !== null}
+                  className=" cursor-pointer relative overflow-hidden font-quicksand bg-transparent text-black hover:text-white border border-white transition-all duration-500 px-8 py-3 rounded-full text-lg tracking-wide hover:shadow-lg before:content-[''] before:absolute before:inset-0 before:bg-white before:pointer-events-none before:transition-transform before:duration-700 before:ease-[cubic-bezier(0.22,1,0.36,1)] hover:before:translate-y-full before:-z-10"
+                >
+                  <span className="relative z-10 text-black align-middle justify-center flex hover:text-white">
+                    {oAuthLoading === "oauth_github" ? "Signing up..." : <Github/>}
+                  </span>
+                  
+                </button>
+              </div>
+            </div>
+
     </form>
   </CardBody>
+
 
   <CardFooter className="flex justify-center py-6">
     new to Sky Vault?{"   "}

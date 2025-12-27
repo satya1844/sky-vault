@@ -14,7 +14,7 @@ export default function ResetPasswordForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn } = useSignIn();
+  const { signIn, isLoaded, setActive } = useSignIn();
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -23,22 +23,39 @@ export default function ResetPasswordForm() {
     setError("");
 
     try {
-      const result = await signIn?.attemptFirstFactor({
+      if (!isLoaded || !signIn) {
+        setError("Auth is not ready. Please wait and try again.");
+        return;
+      }
+      const activeSignIn = signIn;
+
+      const result = await activeSignIn.attemptFirstFactor({
         strategy: "reset_password_email_code",
         code,
-        password
+        password,
       });
 
-      if (result?.status === "complete") {
-        // Add a small delay before redirect to ensure state is updated
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        router.push("/sign-in?reset=success");
-      } else {
-        setError("Password reset failed. Please try again.");
+      if (result.status === "complete" && result.createdSessionId) {
+        await setActive({ session: result.createdSessionId });
+        router.push("/dashboard");
+        return;
       }
-    } catch (err) {
-      console.error("Reset error:", err);
-      setError("Invalid code or password. Please try again.");
+
+      // Handle non-complete statuses explicitly
+      setError("Password reset not completed. Verify code and try again.");
+
+    } catch (err: any) {
+      const clerkError = err?.errors?.[0];
+
+      if (clerkError?.code === "form_password_pwned") {
+      setError("This password is unsafe. Choose a stronger password.");
+    } else if (clerkError?.code === "form_code_incorrect") {
+      setError("Invalid or expired reset code.");
+    } else {
+      setError(clerkError?.message || "Password reset failed.");
+    }
+
+    
     } finally {
       setIsLoading(false);
     }

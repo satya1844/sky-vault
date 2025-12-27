@@ -4,13 +4,15 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useSignUp } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { z } from "zod";
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
 import { Card, CardBody, CardHeader, CardFooter } from "@heroui/card";
 import { Divider } from "@heroui/divider";
+import {Github, Chrome} from "lucide-react";
+
 import {
   Mail,
   Lock,
@@ -23,6 +25,7 @@ import { signUpSchema } from "@/schemas/signUpSchema";
 
 export default function SignUpForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { signUp, isLoaded, setActive } = useSignUp();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -31,6 +34,7 @@ export default function SignUpForm() {
   const [verifying, setVerifying] = useState(false);
   const [verificationCode, setVerificationCode] = useState("");
   const [verificationError, setVerificationError] = useState<string | null>(null);
+  const [oAuthLoading, setOAuthLoading] = useState<string | null>(null);
 
   const {
     register,
@@ -56,7 +60,8 @@ export default function SignUpForm() {
       });
       if (result.status === "complete") {
         await setActive({ session: result.createdSessionId });
-        router.push("/dashboard");
+        const redirectUrl = searchParams.get('redirect_url') || '/dashboard';
+        router.push(redirectUrl);
       } else {
         // Trigger email verification flow
         await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
@@ -88,7 +93,8 @@ export default function SignUpForm() {
 
       if (result.status === "complete") {
         await setActive({ session: result.createdSessionId });
-        router.push("/dashboard");
+        const redirectUrl = searchParams.get('redirect_url') || '/dashboard';
+        router.push(redirectUrl);
       } else {
         setVerificationError(
           "Verification could not be completed. Please try again."
@@ -103,13 +109,36 @@ export default function SignUpForm() {
       setIsSubmitting(false);
     }
   };
-
+const handleOAuthSignUp = async (
+  strategy: "oauth_google" | "oauth_github"
+) => {
+  if (!isLoaded) return;
+  try {
+    setOAuthLoading(strategy);
+    setAuthError(null);
+    const redirectUrl = searchParams.get('redirect_url') || '/dashboard';
+    await signUp?.authenticateWithRedirect({
+      strategy,
+      redirectUrl: redirectUrl,
+      redirectUrlComplete: redirectUrl,
+    });
+    router.push(redirectUrl);
+  } catch (error: any) {
+    console.error("OAuth error:", error);
+    setAuthError(
+      error.errors?.[0]?.message ||
+        "An error occurred during OAuth sign-up. Please try again."
+    );
+  } finally {
+    setOAuthLoading(null);
+  }
+}
   if (verifying) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-5 bg-background relative overflow-hidden">
-        <Card className="w-full max-w-md border-none rounded-2xl bg-white shadow-xl z-10">
+        <Card className="w-full max-w-md border-none rounded-2xl bg-transparent shadow-xl z-10">
           <CardHeader className="flex flex-col gap-1 items-center pb-2">
-            <h1 className="text-2xl font-bold text-black">Verify Your Email</h1>
+            <h1 className="text-2xl font-bold text-white">Verify Your Email</h1>
             <p className="text-default-500 text-center">
               We've sent a verification code to your email
             </p>
@@ -129,7 +158,7 @@ export default function SignUpForm() {
               <div className="space-y-2">
                 <label
                   htmlFor="verificationCode"
-                  className="text-sm font-medium text-black"
+                  className="text-sm font-medium text-white"
                 >
                   Verification Code
                 </label>
@@ -139,7 +168,7 @@ export default function SignUpForm() {
                   placeholder="Enter the 6-digit code"
                   value={verificationCode}
                   onChange={(e) => setVerificationCode(e.target.value)}
-                  className="w-full bg-[#D9D9D9] text-black rounded-lg border-none focus:ring-2 focus:ring-primary focus:outline-none placeholder:text-gray-400"
+                  className="w-full bg-[#D9D9D9] text-white rounded-lg border-none focus:ring-2 focus:ring-primary focus:outline-none placeholder:text-gray-400"
                   autoFocus
                 />
               </div>
@@ -177,6 +206,8 @@ export default function SignUpForm() {
     );
   }
 
+
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-5 relative overflow-hidden text-white">
       {/* Sky Vault Logo */}
@@ -195,7 +226,7 @@ export default function SignUpForm() {
 
         <CardBody className="py-3">
           {authError && (
-            <div className=",nc-red-900 text-red-200 p-4 rounded-lg mb-6 flex items-center gap-2">
+            <div className="bg-red-900 text-red-200 p-4 rounded-lg mb-6 flex items-center gap-2">
               <AlertCircle className="h-5 w-5 flex-shrink-0" />
               <p>{authError}</p>
             </div>
@@ -281,8 +312,42 @@ export default function SignUpForm() {
               className="relative overflow-hidden font-quicksand bg-transparent text-black hover:text-white border border-white transition-all duration-500 px-8 py-3 rounded-full text-lg tracking-wide hover:shadow-lg before:content-[''] before:absolute before:inset-0 before:bg-white before:pointer-events-none before:transition-transform before:duration-700 before:ease-[cubic-bezier(0.22,1,0.36,1)] hover:before:translate-y-full before:-z-10"
               disabled={isSubmitting}
             >
-              <span className="relative z-10">{isSubmitting ? "Creating account..." : "Create Account"}</span>
+              <span className="relative z-10">{isSubmitting ? "Creating account" : "Create Account"}</span>
             </button>
+
+            {/* OAuth Section */}
+            <div className="mt-3">
+              <div className="flex items-center gap-4 mb-3">
+                <div className="flex-1 h-px bg-gray-500"></div>
+                <span className="text-sm text-gray-400">Or continue with</span>
+                <div className="flex-1 h-px bg-gray-500"></div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => handleOAuthSignUp("oauth_google")}
+                  disabled={oAuthLoading !== null}
+                  className=" cursor-pointer relative overflow-hidden font-quicksand bg-transparent text-black hover:text-white border border-white transition-all duration-500 px-8 py-3 rounded-full text-lg tracking-wide hover:shadow-lg before:content-[''] before:absolute before:inset-0 before:bg-white before:pointer-events-none before:transition-transform before:duration-700 before:ease-[cubic-bezier(0.22,1,0.36,1)] hover:before:translate-y-full before:-z-10"
+                >
+                  <span className="relative z-10 text-black align-middle justify-center flex hover:text-white">
+                    {oAuthLoading === "oauth_google" ? "Signing up..." : <Chrome/>}
+                  </span>
+                  
+                  
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleOAuthSignUp("oauth_github")}
+                  disabled={oAuthLoading !== null}
+                  className=" cursor-pointer relative overflow-hidden font-quicksand bg-transparent text-black hover:text-white border border-white transition-all duration-500 px-8 py-3 rounded-full text-lg tracking-wide hover:shadow-lg before:content-[''] before:absolute before:inset-0 before:bg-white before:pointer-events-none before:transition-transform before:duration-700 before:ease-[cubic-bezier(0.22,1,0.36,1)] hover:before:translate-y-full before:-z-10"
+                >
+                  <span className="relative z-10 text-black align-middle justify-center flex hover:text-white">
+                    {oAuthLoading === "oauth_github" ? "Signing up..." : <Github/>}
+                  </span>
+                  
+                </button>
+              </div>
+            </div>
           </form>
         </CardBody>
         
