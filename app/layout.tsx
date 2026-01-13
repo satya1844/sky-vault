@@ -17,8 +17,36 @@ const quicksand = Quicksand({
 });
 
 export const metadata: Metadata = {
-  title: "Sky vault",
-  description: "Secure cloud storage for your images, powered by ImageKit",
+  title: "SkyVault - Secure Cloud Storage",
+  description: "Organize and manage your files with SkyVault. Secure cloud storage for your images and documents, powered by ImageKit.",
+  keywords: ["cloud storage", "file management", "secure storage", "image storage"],
+  authors: [{ name: "SkyVault Team" }],
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://skyvault-ecru.vercel.app",
+    title: "SkyVault - Secure Cloud Storage",
+    description: "Organize and manage your files with SkyVault. Secure cloud storage for your images and documents.",
+    siteName: "SkyVault",
+    images: [
+      {
+        url: "https://skyvault-ecru.vercel.app/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "SkyVault - Cloud Storage Platform",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "SkyVault - Secure Cloud Storage",
+    description: "Organize and manage your files with SkyVault.",
+    images: ["https://skyvault-ecru.vercel.app/og-image.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({
