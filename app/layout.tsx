@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     siteName: "SkyVault",
     images: [
       {
-        url: "https://skyvault-ecru.vercel.app/og-image.png",
+        url: "https://skyvault-ecru.vercel.app/skyvault.png",
         width: 1200,
         height: 630,
         alt: "SkyVault - Cloud Storage Platform",
