@@ -12,8 +12,10 @@ import {
   uuid,
   integer,
   boolean,
+  index,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
+import { permission } from "process";
 
 /**
  * Users Table
@@ -64,6 +66,34 @@ export const files = pgTable("files", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+/** File Shares Table
+ *
+ * This table manages shared file links and their permissions.
+ */
+
+export const fileShares = pgTable(
+  "file_shares",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+
+    fileId: uuid("file_id").notNull(),
+
+    ownerId: text("owner_id").notNull(),
+
+    token: text("token").notNull().unique(),
+
+    permission: text("permission").notNull().default("view"),
+
+    expiresAt: timestamp("expires_at"),
+
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    fileIdx: index("file_shares_file_id_idx").on(table.fileId),
+    tokenIdx: index("file_shares_token_idx").on(table.token),
+  })
+);
+
 /**
  * File Relations
  *
@@ -73,20 +103,16 @@ export const files = pgTable("files", {
  *
  * This creates a hierarchical file structure similar to a real filesystem.
  */
-export const filesRelations = relations(files, ({ one, many }) => ({
-  // Relationship to parent folder
-  parent: one(files, {
-    fields: [files.parentId], // The foreign key in this table
-    references: [files.id], // The primary key in the parent table
-  }),
-
-  // Relationship to child files/folders
-  children: many(files),
-
-  // Relationship to user
-  user: one(users, {
+export const filesRelations = relations(files, ({ one }) => ({
+  owner: one(users, {
     fields: [files.userId],
     references: [users.id],
+  }),
+
+  parent: one(files, {
+    fields: [files.parentId],
+    references: [files.id],
+    relationName: "folderTree",
   }),
 }));
 
@@ -99,6 +125,8 @@ export const usersRelations = relations(users, ({ many }) => ({
   files: many(files),
 }));
 
+
+
 /**
  * Type Definitions
  *
@@ -106,6 +134,10 @@ export const usersRelations = relations(users, ({ many }) => ({
  * - File: Type for retrieving file data from the database
  * - NewFile: Type for inserting new file data into the database
  */
+
+
+
+
 export type File = typeof files.$inferSelect;
 export type NewFile = typeof files.$inferInsert;
 export type User = typeof users.$inferSelect;

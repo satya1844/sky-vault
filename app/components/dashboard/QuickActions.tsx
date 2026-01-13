@@ -4,6 +4,8 @@ import { useRef, useState, useEffect } from "react";
 import { Upload, FolderPlus, Plus, Sparkles } from "lucide-react";
 import { Button } from "@heroui/button";
 import { addToast } from "@heroui/toast";
+import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/modal";
+import { Input } from "@heroui/input";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 interface QuickActionsProps {
@@ -46,6 +48,10 @@ export default function QuickActions({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  
+  // Folder creation modal state
+  const [createFolderModalOpen, setCreateFolderModalOpen] = useState(false);
+  const [folderNameInput, setFolderNameInput] = useState("");
   // AI Suggestions state
   interface AISuggestion {
     id: string;
@@ -257,15 +263,23 @@ export default function QuickActions({
     e.preventDefault();
   };
 
-  // Create new folder
-  const handleCreateFolder = async () => {
-    const folderName = prompt('Enter folder name:');
-    if (!folderName?.trim()) return;
+  // Create new folder - opens modal
+  const handleCreateFolder = () => {
+    setFolderNameInput("");
+    setCreateFolderModalOpen(true);
+  };
+
+  // Submit folder creation from modal
+  const submitCreateFolder = async () => {
+    const folderName = folderNameInput.trim();
+    if (!folderName) return;
 
     try {
+      setCreateFolderModalOpen(false);
+      
       const response = await axios.post('/api/folders/create',
        {
-        name: folderName.trim(),
+        name: folderName,
         userId,
         parentId: currentFolderId,
       },{
@@ -287,6 +301,7 @@ export default function QuickActions({
         classNames: toastClassNames
       });
 
+      setFolderNameInput("");
       onActionComplete();
     } catch (error) {
       console.error('Create folder error:', error);
@@ -297,6 +312,18 @@ export default function QuickActions({
         color: "danger",
         classNames: toastClassNames
       });
+    }
+  };
+
+  // Handle Enter key in folder name input
+  const handleFolderNameKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      submitCreateFolder();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      setCreateFolderModalOpen(false);
+      setFolderNameInput("");
     }
   };
   const router = useRouter();
@@ -447,106 +474,81 @@ export default function QuickActions({
         </div>
       </div>
 
+      {/* Create Folder Modal */}
+      <Modal
+        isOpen={createFolderModalOpen}
+        onOpenChange={(open) => {
+          setCreateFolderModalOpen(open);
+          if (!open) setFolderNameInput("");
+        }}
+        backdrop="blur"
+        classNames={{
+          base: "border border-default-200 bg-zinc-900",
+          header: "border-b border-default-200",
+          footer: "border-t border-default-200",
+        }}
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1 text-white">
+                <div className="flex items-center gap-2">
+                  <FolderPlus className="w-5 h-5 text-yellow-500" />
+                  Create New Folder
+                </div>
+              </ModalHeader>
+              <ModalBody>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-300">
+                    Folder Name
+                  </label>
+                  <Input
+                    type="text"
+                    placeholder="Enter folder name"
+                    value={folderNameInput}
+                    onChange={(e) => setFolderNameInput(e.target.value)}
+                    onKeyDown={handleFolderNameKeyDown}
+                    autoFocus
+                    maxLength={255}
+                    classNames={{
+                      input: "bg-zinc-800 text-white",
+                      inputWrapper: "bg-zinc-800 border-zinc-700",
+                    }}
+                  />
+                  {currentFolderPath.length > 0 && (
+                    <p className="text-xs text-gray-400">
+                      Location: {currentFolderPath.map(f => f.name).join(' > ')}
+                    </p>
+                  )}
+                </div>
+              </ModalBody>
+              <ModalFooter>
+                <Button
+                  variant="flat"
+                  onPress={() => {
+                    onClose();
+                    setFolderNameInput("");
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  color="primary"
+                  onPress={submitCreateFolder}
+                  isDisabled={!folderNameInput.trim()}
+                >
+                  Create Folder
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
       
   
 
-      {/* Duplicate Review Inline Panel */}
-      {duplicateReview.open && duplicateReview.suggestion?.meta?.groups && (
-        <div className="border rounded-xl p-4 bg-indigo-950/20 space-y-3">
-          <div className="flex items-center justify-between">
-            <h5 className="text-sm font-semibold text-indigo-300">Duplicate Review</h5>
-            <button className="text-xs text-indigo-400 hover:underline" onClick={() => setDuplicateReview({ open: false, suggestion: null })}>Close</button>
-          </div>
-          <p className="text-[11px] text-indigo-200/80">Select the copies you want to delete. Keep at least one per group.</p>
-          <div className="max-h-56 overflow-auto pr-1 space-y-3">
-            {duplicateReview.suggestion.meta.groups.map((g: any, idx: number) => {
-              // Force at least one keep: disable checkbox if it would remove all
-              const selectedInGroup = g.files.filter((f: any) => selectedForDeletion[f.id]);
-              const allSelected = selectedInGroup.length === g.files.length;
-              return (
-                <div key={idx} className="border border-indigo-600/30 rounded p-2">
-                  <p className="text-indigo-200 text-xs mb-1 font-medium">{g.name} <span className="text-indigo-400">({g.count})</span></p>
-                  <ul className="space-y-1">
-                    {g.files.map((f: any, i: number) => {
-                      const checked = !!selectedForDeletion[f.id];
-                      const disable = !checked && g.files.length - selectedInGroup.length <= 1; // ensure one remains
-                      return (
-                        <li key={f.id} className="flex items-center gap-2 text-[11px]">
-                          <input
-                            type="checkbox"
-                            disabled={disable}
-                            checked={checked}
-                            onChange={() => toggleSelectDuplicate(f.id)}
-                            className="accent-indigo-500"
-                          />
-                          <span className="truncate flex-1" title={f.name}>{f.name}</span>
-                          <span className="text-indigo-400">#{i + 1}</span>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              );
-            })}
-          </div>
-          <div className="flex items-center justify-between gap-3">
-            <button
-              onClick={() => { setSelectedForDeletion({}); refreshSuggestions(); }}
-              className="text-xs text-indigo-400 hover:underline"
-            >Reset</button>
-            <button
-              disabled={processingDelete || Object.values(selectedForDeletion).every(v => !v)}
-              onClick={executeDuplicateDeletion}
-              className="px-3 py-1.5 rounded bg-red-600 disabled:opacity-40 text-white text-xs hover:bg-red-500"
-            >{processingDelete ? 'Deleting…' : 'Delete Selected'}</button>
-          </div>
-        </div>
-      )}
-
-      {/* Image Tagging Placeholder Panel */}
-      {imageTagging.open && imageTagging.suggestion?.meta?.samples && (
-        <div className="border rounded-xl p-4 bg-purple-950/20 space-y-3">
-          <div className="flex items-center justify-between">
-            <h5 className="text-sm font-semibold text-purple-300">Image Tagging (Prototype)</h5>
-            <button className="text-xs text-purple-400 hover:underline" onClick={() => setImageTagging({ open: false, suggestion: null })}>Close</button>
-          </div>
-          <p className="text-[11px] text-purple-200/80">Simulating automatic tag generation…</p>
-          <div className="flex flex-wrap gap-1">
-            {imageTagging.suggestion.meta.samples.map((f: any) => (
-              <span key={f.id} className="px-2 py-0.5 bg-purple-800/40 rounded text-purple-100 text-[10px] truncate max-w-[100px]">{f.name}</span>
-            ))}
-          </div>
-          <div className="w-full h-2 bg-purple-900/40 rounded overflow-hidden">
-            <div style={{ width: `${taggingProgress}%` }} className="h-full bg-purple-500 transition-all"></div>
-          </div>
-          <button onClick={simulateTagging} className="px-3 py-1.5 rounded bg-purple-600 text-white text-xs hover:bg-purple-500">{taggingProgress < 100 ? 'Start' : 'Done'}</button>
-        </div>
-      )}
-
-      {/* Archive Panel Placeholder */}
-      {archivePanel.open && archivePanel.suggestion?.meta?.samples && (
-        <div className="border rounded-xl p-4 bg-amber-950/20 space-y-3">
-          <div className="flex items-center justify-between">
-            <h5 className="text-sm font-semibold text-amber-300">Archive Large Files</h5>
-            <button className="text-xs text-amber-400 hover:underline" onClick={() => setArchivePanel({ open: false, suggestion: null })}>Close</button>
-          </div>
-          <p className="text-[11px] text-amber-200/80">Select files to mark for archiving (placeholder action).</p>
-          <ul className="space-y-1 max-h-48 overflow-auto pr-1">
-            {archivePanel.suggestion.meta.samples.map((f: any) => (
-              <li key={f.id} className="flex items-center gap-2 text-[11px]">
-                <input type="checkbox" checked={!!archiveSelection[f.id]} onChange={() => toggleArchiveSelect(f.id)} className="accent-amber-500" />
-                <span className="truncate flex-1" title={f.name}>{f.name}</span>
-                <span className="text-amber-400">{(f.size/1024/1024).toFixed(1)}MB</span>
-              </li>
-            ))}
-          </ul>
-          <button
-            disabled={processingArchive || Object.values(archiveSelection).every(v => !v)}
-            onClick={simulateArchive}
-            className="px-3 py-1.5 rounded bg-amber-600 text-white text-xs hover:bg-amber-500 disabled:opacity-40"
-          >{processingArchive ? 'Archiving…' : 'Archive Selected'}</button>
-        </div>
-      )}
+    
     </div>
   );
 }
