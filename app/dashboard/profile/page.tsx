@@ -58,8 +58,8 @@ export default function UserProfile() {
 
   if (!isLoaded) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col justify-center items-center p-4">
-        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 md:p-8 border border-white/20">
+      <div className="min-h-screen  flex flex-col justify-center items-center p-4">
+        <div className="backdrop-blur-md rounded-2xl p-6 md:p-8 border border-white/20">
           <Spinner size="lg" color="primary" />
           <p className="mt-4 text-white/80 text-center text-sm md:text-base">Loading your profile...</p>
         </div>
@@ -69,7 +69,7 @@ export default function UserProfile() {
 
   if (!isSignedIn) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col justify-center items-center p-4">
+      <div className="min-h-screen bg-gradient-to-br\ flex flex-col justify-center items-center p-4">
         <Card className="max-w-sm md:max-w-md w-full bg-white/10 backdrop-blur-md border border-white/20 shadow-2xl">
           <CardHeader className="flex gap-3 pb-4 md:pb-6">
             <div className="p-2 md:p-3 bg-blue-500/20 rounded-full">
@@ -131,7 +131,7 @@ export default function UserProfile() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 md:p-6">
+    <div className="min-h-screen  p-4 md:p-6">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-6 md:mb-8">

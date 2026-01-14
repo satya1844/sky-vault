@@ -157,6 +157,27 @@ export default function Recents({ userId, limit = 20, refreshTrigger = 0 }: Rece
     }
   };
 
+  // Open file in browser viewer
+  const openFileInBrowser = (file: FileType) => {
+    const imagekitEndpoint = process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT || 'https://ik.imagekit.io/vinay2005';
+    const fileUrl = `${imagekitEndpoint}/${file.path}`;
+    
+    // For PDFs, open directly in browser (browsers have native PDF viewers)
+    if (file.type === "application/pdf") {
+      window.open(fileUrl, "_blank");
+    } 
+    // For DOCX files, use Google Docs Viewer
+    else if (
+      file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+      file.type === "application/msword" ||
+      file.name.endsWith(".docx") ||
+      file.name.endsWith(".doc")
+    ) {
+      const encodedUrl = encodeURIComponent(fileUrl);
+      window.open(`https://docs.google.com/viewer?url=${encodedUrl}&embedded=true`, "_blank");
+    }
+  };
+
   // Handle item click
   const handleItemClick = (file: FileType) => {
     if (file.isFolder) {
@@ -164,6 +185,14 @@ export default function Recents({ userId, limit = 20, refreshTrigger = 0 }: Rece
       console.log(`Navigate to folder: ${file.name}`);
     } else if (file.type.startsWith("image/")) {
       openImageViewer(file);
+    } else if (
+      file.type === "application/pdf" ||
+      file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+      file.type === "application/msword" ||
+      file.name.endsWith(".docx") ||
+      file.name.endsWith(".doc")
+    ) {
+      openFileInBrowser(file);
     }
   };
 

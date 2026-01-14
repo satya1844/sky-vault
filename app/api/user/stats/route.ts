@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     const requestUserId = searchParams.get('userId');
 
     // Verify that the requested userId matches the authenticated user
-    if (requestUserId !== userId) {
+    if (requestUserId && requestUserId !== userId) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
