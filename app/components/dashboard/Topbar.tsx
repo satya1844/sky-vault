@@ -11,7 +11,6 @@ interface TopbarProps {
     firstName?: string | null;
     lastName?: string | null;
     imageUrl?: string;
-const convertFileDates = (files: any[]) => files.map(file => ({ ...file, createdAt: new Date(file.createdAt), updatedAt: new Date(file.updatedAt) }));
   };
   onSearch?: (query: string) => void;
   files?: Array<{
@@ -28,34 +27,10 @@ const convertFileDates = (files: any[]) => files.map(file => ({ ...file, created
     isStarred: boolean;
     isTrashed: boolean;
     createdAt: string;
-  updatedAt: string;
+    updatedAt: string;
   }>;
   onSidebarToggle?: () => void;
 }
-
-export default function Topbar({ user, onSearch, files = [], onSidebarToggle }: TopbarProps) {
-  const [searchQuery, setSearchQuery] = React.useState("");
-  const [showResults, setShowResults] = React.useState(false);
-  const searchRef = React.useRef<HTMLDivElement>(null);
-  const searchInputRef = React.useRef<HTMLInputElement>(null);
-
-  // Close dropdowns on outside click
-  React.useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-    return convertFileDates(files).filter(file => file.name.toLowerCase().includes(searchQuery.toLowerCase()));
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  // Close search on Escape key
-  React.useEffect(() => {
-    const handleEscapeKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setShowResults(false);
-        searchInputRef.current?.blur();
-      }
-    };
 
 type FileItem = NonNullable<TopbarProps["files"]>[number];
 type FileItemWithDates = Omit<FileItem, "createdAt" | "updatedAt"> & { createdAt: Date; updatedAt: Date };
@@ -66,13 +41,35 @@ const convertFileDates = (files: TopbarProps["files"] = []): FileItemWithDates[]
     createdAt: new Date(file.createdAt),
     updatedAt: new Date(file.updatedAt),
   }));
+
+export default function Topbar({ user, onSearch, files = [], onSidebarToggle }: TopbarProps) {
+  const [searchQuery, setSearchQuery] = React.useState("");
+  const [showResults, setShowResults] = React.useState(false);
+  const searchRef = React.useRef<HTMLDivElement>(null);
+  const searchInputRef = React.useRef<HTMLInputElement>(null);
+
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) setShowResults(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  React.useEffect(() => {
+    const handleEscapeKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowResults(false);
+        searchInputRef.current?.blur();
+      }
+    };
     document.addEventListener("keydown", handleEscapeKey);
     return () => document.removeEventListener("keydown", handleEscapeKey);
   }, []);
 
-  const filteredFiles = React.useMemo(() => {
+  const filteredFiles = React.useMemo<FileItemWithDates[]>(() => {
     if (!searchQuery.trim()) return [];
-    return files.filter(file => file.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    return convertFileDates(files).filter(file => file.name.toLowerCase().includes(searchQuery.toLowerCase()));
   }, [files, searchQuery]);
 
   const handleSearch = (value: string) => {
@@ -84,7 +81,6 @@ const convertFileDates = (files: TopbarProps["files"] = []): FileItemWithDates[]
   const handleResultClick = (file: any) => {
     setShowResults(false);
     setSearchQuery("");
-    console.log("Selected file:", file);
   };
 
   const clearSearch = () => {
@@ -94,7 +90,7 @@ const convertFileDates = (files: TopbarProps["files"] = []): FileItemWithDates[]
 
   return (
     <div className="w-full">
-  const filteredFiles = React.useMemo<FileItemWithDates[]>(() => {
+      {/* Desktop Layout */}
       <div className="hidden lg:block px-6 py-2">
         <div className="flex items-center justify-between gap-4">
           <div className="flex-1 max-w-2xl" ref={searchRef}>

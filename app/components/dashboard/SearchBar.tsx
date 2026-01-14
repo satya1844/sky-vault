@@ -30,7 +30,7 @@ interface SearchBarProps {
   }>;
   onResultClick: (file: any) => void;
   variant?: "desktop" | "tablet" | "mobile";
-  inputRef?: React.RefObject<HTMLInputElement>;
+  inputRef?: React.RefObject<HTMLInputElement> | React.MutableRefObject<HTMLInputElement | null>;
 }
 
 export default function SearchBar({
@@ -55,7 +55,7 @@ export default function SearchBar({
     <div className="relative">
       <Search className={cn("absolute top-1/2 transform -translate-y-1/2 text-gray-400", searchIconSize, searchIconLeft)} />
       <Input
-        ref={inputRef}
+        ref={inputRef as React.Ref<HTMLInputElement>}
         type="text"
         placeholder={placeholder}
         value={searchQuery}
