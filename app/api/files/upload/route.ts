@@ -156,14 +156,16 @@ export async function POST(request: NextRequest) {
     console.error("❌ Error uploading file:", error);
     
     // Log additional error details
+    let errorMessage = "Failed to upload file";
     if (error instanceof Error) {
       console.error("Error name:", error.name);
       console.error("Error message:", error.message);
       console.error("Error stack:", error.stack);
+      errorMessage = error.message;
     }
     
     return NextResponse.json(
-      { error: "Failed to upload file" },
+      { error: errorMessage, details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }
