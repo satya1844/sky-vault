@@ -412,7 +412,7 @@ export default function FileList({
       // Navigate to the clicked folder
       navigateToFolder(file.id, file.name);
     } else if (file.type.startsWith("image/")) {
-      console.log('FileList: Opening image viewer...');
+      
       openImageViewer(file);
     } else {
       console.log('FileList: Non-image file clicked, no action taken');
@@ -894,9 +894,9 @@ export default function FileList({
   // Function to open image in a new tab with optimized view
   const openImageViewer = (file: FileType) => {
     if (file.type.startsWith("image/")) {
-      // Create an optimized URL with ImageKit transformations for viewing
-      // Using higher quality and responsive sizing for better viewing experience
-      const optimizedUrl = `${process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT}/tr:q-90,w-1600,h-1200,fo-auto/${file.path}`;
+          const imagekitEndpoint = process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT || 'https://ik.imagekit.io/vinay2005';
+
+      const optimizedUrl = `${imagekitEndpoint}/tr:q-90,w-1600,h-1200,fo-auto/${file.path}`;
       window.open(optimizedUrl, "_blank");
     }
   };
