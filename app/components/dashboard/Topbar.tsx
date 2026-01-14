@@ -11,6 +11,7 @@ interface TopbarProps {
     firstName?: string | null;
     lastName?: string | null;
     imageUrl?: string;
+const convertFileDates = (files: any[]) => files.map(file => ({ ...file, createdAt: new Date(file.createdAt), updatedAt: new Date(file.updatedAt) }));
   };
   onSearch?: (query: string) => void;
   files?: Array<{
@@ -41,7 +42,7 @@ export default function Topbar({ user, onSearch, files = [], onSidebarToggle }: 
   // Close dropdowns on outside click
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(event.target as Node)) setShowResults(false);
+    return convertFileDates(files).filter(file => file.name.toLowerCase().includes(searchQuery.toLowerCase()));
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -55,6 +56,16 @@ export default function Topbar({ user, onSearch, files = [], onSidebarToggle }: 
         searchInputRef.current?.blur();
       }
     };
+
+type FileItem = NonNullable<TopbarProps["files"]>[number];
+type FileItemWithDates = Omit<FileItem, "createdAt" | "updatedAt"> & { createdAt: Date; updatedAt: Date };
+
+const convertFileDates = (files: TopbarProps["files"] = []): FileItemWithDates[] =>
+  files.map(file => ({
+    ...file,
+    createdAt: new Date(file.createdAt),
+    updatedAt: new Date(file.updatedAt),
+  }));
     document.addEventListener("keydown", handleEscapeKey);
     return () => document.removeEventListener("keydown", handleEscapeKey);
   }, []);
@@ -83,7 +94,7 @@ export default function Topbar({ user, onSearch, files = [], onSidebarToggle }: 
 
   return (
     <div className="w-full">
-      {/* Desktop Layout */}
+  const filteredFiles = React.useMemo<FileItemWithDates[]>(() => {
       <div className="hidden lg:block px-6 py-2">
         <div className="flex items-center justify-between gap-4">
           <div className="flex-1 max-w-2xl" ref={searchRef}>
