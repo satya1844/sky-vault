@@ -753,7 +753,7 @@ export default function FileList({
       if (file.type.startsWith("image/")) {
         // Create a download-optimized URL with ImageKit
         // Using high quality and original dimensions for downloads
-        const downloadUrl = `${process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT}/tr:q-100,orig-true/${file.path}`;
+        const downloadUrl = `${process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT || 'https://ik.imagekit.io/vinay2005'}/tr:q-100,orig-true/${file.path}`;
 
         // Fetch the image first to ensure it's available
         const response = await fetch(downloadUrl);

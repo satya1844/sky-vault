@@ -104,7 +104,7 @@ export default function Recents({ userId, limit = 20, refreshTrigger = 0 }: Rece
       });
 
       if (file.type.startsWith("image/")) {
-        const downloadUrl = `${process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT}/tr:q-100,orig-true/${file.path}`;
+        const downloadUrl = `${process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT || 'https://ik.imagekit.io/vinay2005'}/tr:q-100,orig-true/${file.path}`;
         const response = await fetch(downloadUrl);
         if (!response.ok) throw new Error(`Failed to download image: ${response.statusText}`);
         
@@ -152,7 +152,7 @@ export default function Recents({ userId, limit = 20, refreshTrigger = 0 }: Rece
   // Open image viewer (reusing logic from FileList)
   const openImageViewer = (file: FileType) => {
     if (file.type.startsWith("image/")) {
-      const optimizedUrl = `${process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT}/tr:q-90,w-1600,h-1200,fo-auto/${file.path}`;
+      const optimizedUrl = `${process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT || 'https://ik.imagekit.io/vinay2005'}/tr:q-90,w-1600,h-1200,fo-auto/${file.path}`;
       window.open(optimizedUrl, "_blank");
     }
   };
