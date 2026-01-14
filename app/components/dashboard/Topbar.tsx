@@ -26,8 +26,8 @@ interface TopbarProps {
     isFolder: boolean;
     isStarred: boolean;
     isTrashed: boolean;
-    createdAt: Date;
-    updatedAt: Date;
+    createdAt: string;
+  updatedAt: string;
   }>;
   onSidebarToggle?: () => void;
 }
