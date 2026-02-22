@@ -65,7 +65,7 @@ export default function SignInForm() {
       if (result.status === "complete") {
         await setActive({ session: result.createdSessionId });
         const redirectUrl = searchParams.get('redirect_url') || '/dashboard';
-        router.push(redirectUrl);
+        await router.push(redirectUrl);
       } else {
         setAuthError("Sign-in could not be completed. Please try again.");
       }

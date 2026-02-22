@@ -157,15 +157,46 @@ export async function POST(request: NextRequest) {
     
     // Log additional error details
     let errorMessage = "Failed to upload file";
+    let errorType = "Unknown";
+    let errorDetails = {};
+    
     if (error instanceof Error) {
       console.error("Error name:", error.name);
       console.error("Error message:", error.message);
       console.error("Error stack:", error.stack);
       errorMessage = error.message;
+      errorType = error.name;
+      
+      // Check for specific error types
+      if (error.message.includes("ImageKit")) {
+        errorType = "ImageKitError";
+        errorDetails = {
+          hint: "Check IMAGEKIT environment variables in Vercel",
+          publicKey: !!process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY,
+          privateKey: !!process.env.IMAGEKIT_PRIVATE_KEY,
+          urlEndpoint: !!process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT
+        };
+      } else if (error.message.includes("database") || error.message.includes("DATABASE")) {
+        errorType = "DatabaseError";
+        errorDetails = {
+          hint: "Check DATABASE_URL in Vercel",
+          hasDbUrl: !!process.env.DATABASE_URL
+        };
+      } else if (error.message.includes("PAYLOAD_TOO_LARGE") || error.message.includes("body size")) {
+        errorType = "PayloadTooLarge";
+        errorDetails = {
+          hint: "File too large for Vercel (max 4.5MB). Consider client-side upload to ImageKit."
+        };
+      }
     }
     
     return NextResponse.json(
-      { error: errorMessage, details: error instanceof Error ? error.message : String(error) },
+      { 
+        error: errorMessage, 
+        type: errorType,
+        details: errorDetails,
+        timestamp: new Date().toISOString()
+      },
       { status: 500 }
     );
   }

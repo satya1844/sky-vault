@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import { Button } from "@heroui/button";
 import Link from "next/link";
@@ -38,6 +40,8 @@ export default function GetStartedPage() {
       illustration: "/getStarted/chatbot.png"
     }
   ];
+
+  const [loading, setLoading] = React.useState('');
 
   return (
     <div className="min-h-screen w-full relative overflow-y-auto">
@@ -109,7 +113,7 @@ export default function GetStartedPage() {
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <SignedOut>
             <Button className="relative overflow-hidden font-quicksand bg-transparent text-black hover:text-white border border-white transition-colors duration-500 px-8 py-3 rounded-full text-lg tracking-wide hover:shadow-lg before:content-[''] before:absolute before:inset-0 before:bg-white before:pointer-events-none before:transition-transform before:duration-700 before:ease-[cubic-bezier(0.22,1,0.36,1)] hover:before:translate-y-full">
-              <Link href="/sign-up" className="relative z-10">SIGN UP</Link>
+              <Link href="/sign-up" className="relative z-10">{loading === 'sign-up' ? 'lets go!...' : 'Sign Up'}</Link>
             </Button>
 
           </SignedOut>

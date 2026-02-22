@@ -2,16 +2,18 @@
 import { cn } from "@/lib/utils";
 import React, { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { IconX, IconHome, IconFolder, IconClock, IconShare, IconStar, IconTrash, IconSettings, IconUserBolt } from "@tabler/icons-react";
+import { IconX, IconHome, IconFolder, IconClock, IconShare, IconStar, IconTrash, IconSettings, IconUserBolt, IconLogout } from "@tabler/icons-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {useUser} from "@clerk/nextjs";
 import { Pacifico } from 'next/font/google';
+import { useClerk } from "@clerk/nextjs";
 import {useEffect, useState as useStateImport} from "react";
 interface Links {
   label: string;
   href: string;
   icon: React.JSX.Element | React.ReactNode;
+  action?: () => void;
 }
 
 // ============================================
@@ -39,7 +41,7 @@ export function SidebarDemo({
   const open = openProp !== undefined ? openProp : openState;
   const setOpen = setOpenProp !== undefined ? setOpenProp : setOpenState;
   const TOTAL_STORAGE_GB = 3; // Total storage in GB
-
+  const {signOut} = useClerk();
 
   // Fetch user stats
   const fetchUserStats = async () => {
@@ -148,7 +150,14 @@ export function SidebarDemo({
       label: "Settings",
       href: "/dashboard/settings",
       icon: <IconSettings className="h-5 w-5 shrink-0 text-neutral-700 dark:text-neutral-200" />,
+      
     },
+    {
+  label: "Sign Out",
+  href: "/",
+  icon: <IconLogout className="h-5 w-5 shrink-0 text-neutral-700 dark:text-neutral-200" />,
+  action: () => signOut({ redirectUrl: "/" })
+},
   ];
 
   return (
@@ -196,6 +205,7 @@ export function SidebarDemo({
           <nav className="flex flex-col gap-1 mt-6">
             {links.map((link) => (
               <SidebarLink key={link.href} link={link} />
+              
             ))}
           </nav>
         </div>
@@ -258,12 +268,18 @@ const SidebarLink = ({
   const pathname = usePathname();
   const isActive = pathname === link.href;
 
- 
+  const handleClick = (e: React.MouseEvent) => {
+    if (link.action) {
+      e.preventDefault();
+      link.action();
+    }
+    onClick?.();
+  };
 
   return (
     <Link
       href={link.href}
-      onClick={onClick}
+      onClick={handleClick}
       className={cn(
         "flex items-center gap-3 py-3 px-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors",
         isActive && "bg-neutral-100 dark:bg-neutral-800"

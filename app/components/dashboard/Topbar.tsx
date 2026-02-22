@@ -25,7 +25,7 @@ interface TopbarProps {
     parentId: string | null;
     isFolder: boolean;
     isStarred: boolean;
-    isTrashed: boolean;
+    isTrashed: boolean; 
     createdAt: string;
     updatedAt: string;
   }>;

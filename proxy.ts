@@ -17,6 +17,18 @@ const authFlowRoutes = ["/reset-password", "/sign-in", "/sign-up"];
 export default clerkMiddleware(async (auth, request) => {
   const { userId } = await auth();
   const url = new URL(request.url);
+  const isApiRoute = url.pathname.startsWith("/api") || url.pathname.startsWith("/trpc");
+
+  // For API requests, return 401 JSON instead of redirecting to sign-in
+  if (isApiRoute) {
+    if (!userId) {
+      return new NextResponse(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "content-type": "application/json" },
+      });
+    }
+    return NextResponse.next();
+  }
 
   if (userId && isPublicRoute(request) && !authFlowRoutes.includes(url.pathname)) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
