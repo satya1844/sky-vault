@@ -23,11 +23,15 @@ export async function GET(request: NextRequest) {
           process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY &&
           process.env.IMAGEKIT_PRIVATE_KEY &&
           process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT
-        )
+        ),
+        canInitialize: undefined as boolean | undefined,
+        error: undefined as string | undefined
       },
       database: {
         hasUrl: !!process.env.DATABASE_URL,
-        urlLength: process.env.DATABASE_URL?.length || 0
+        urlLength: process.env.DATABASE_URL?.length || 0,
+        connection: undefined as string | undefined,
+        error: undefined as string | undefined
       },
       clerk: {
         hasPublishableKey: !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
